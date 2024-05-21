@@ -4,19 +4,15 @@ set -o nounset
 function fmt_args {
     [ $# -eq 0 ] && return
     local -i h=0
-    local arg a b f
+    local arg a b
     for arg in "$@"; do
         a=${arg@Q}
         b=$(printf %q "$arg")
-        if ((h++)); then
-            f=' %s'
-        else
-            f='%s'
-        fi
+        ((h++)) && printf ' '
         if [ ${#a} -le ${#b} ]; then
-            printf "$f" "$a"
+            printf %s "$a"
         else
-            printf "$f" "$b"
+            printf %s "$b"
         fi
     done
 }
