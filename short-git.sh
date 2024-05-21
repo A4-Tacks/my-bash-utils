@@ -53,6 +53,8 @@ function short-git {
 				    p       push
 				    u       remote update
 				    S       show
+				    a       add
+				    c       commit <args...>
 				branch commands:
 				    s       switch
 				    r       rebase
@@ -71,6 +73,43 @@ function short-git {
             l) git log --oneline --graph --all;;
             p) git push;;
             S) git show;;
+            a)
+                local file tmp
+                local -A files
+                mapfile -d '' tmp < <(
+                    command git ls-files --others --modified \
+                        --directory --no-empty-directory \
+                        --exclude-standard -z
+                    printf '%d\0' $?
+                )
+                if [ "${tmp[-1]}" -ne 0 ]; then
+                    (exit "${tmp[-1]}")
+                else
+                    files=()
+                    for file in "${tmp[@]::${#tmp[@]}-1}"; do
+                        files[${file@Q}]=0
+                        while [[ $file = */?* ]]; do
+                            file=${file%/?*}
+                            files[${file@Q}]=0
+                        done
+                    done
+                    PS3="select add target> "
+                    select file in "${!files[@]}"; do
+                        [ "$REPLY" = 0 ] && break
+                        if [ -z "$file" ]; then
+                            echo invalid input >&2
+                            continue
+                        fi
+                        eval git add -- "$file" # 在之前进行了可重用
+                    done
+                    unset files tmp
+                fi
+                ;;
+            c)
+                local extra
+                read -erp 'git commit ' extra
+                eval git commit "$extra"
+                ;;
 
             $'\020') cmd_args=(push);;&
             u) cmd_args=(remote update);;&
