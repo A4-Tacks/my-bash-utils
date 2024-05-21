@@ -55,6 +55,7 @@ function short-git {
 				    S       show
 				    a       add
 				    c       commit <args...>
+				    space   :eval git
 				branch commands:
 				    s       switch
 				    r       rebase
@@ -109,6 +110,10 @@ function short-git {
                 local extra
                 read -erp 'git commit ' extra \
                     && eval git commit "$extra"
+                ;;
+            ' ')
+                local cmd
+                read -erp 'git ' cmd && eval git "${cmd}"
                 ;;
 
             $'\020') cmd_args=(push);;&
