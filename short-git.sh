@@ -44,14 +44,15 @@ function short-git {
                 cat <<- EOF
 				short-git
 				simple commands:
-				    h / ?   show this help
-				    H       show git help
+				    h / ?   :show this help
+				    H       :show git help
 				    q / ^D  quit
 				    ^M      status
 				    d       diff
 				    l       log --oneline --graph --all
 				    p       push
 				    u       remote update
+				    S       show
 				branch commands:
 				    s       switch
 				    r       rebase
@@ -69,6 +70,7 @@ function short-git {
             d) git diff;;
             l) git log --oneline --graph --all;;
             p) git push;;
+            S) git show;;
 
             $'\020') cmd_args=(push);;&
             u) cmd_args=(remote update);;&
