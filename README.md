@@ -8,7 +8,7 @@ some simple sample
 **short-git**
 
 <details>
-<summary><font size="4" color="orange">Show Code</font></summary>
+<summary>Show Code</summary>
 
 ```bash
 $ bash short-git.sh
