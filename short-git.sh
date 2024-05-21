@@ -107,8 +107,8 @@ function short-git {
                 ;;
             c)
                 local extra
-                read -erp 'git commit ' extra
-                eval git commit "$extra"
+                read -erp 'git commit ' extra \
+                    && eval git commit "$extra"
                 ;;
 
             $'\020') cmd_args=(push);;&
