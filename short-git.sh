@@ -90,8 +90,13 @@ function short-git {
                             files[${file@Q}]=0
                         done
                     done
+
+                    local -a sorted_files
+                    mapfile -d '' sorted_files < <(\
+                        printf '%s\0' "${!files[@]}" | sort -z
+                    )
                     PS3="select add target> "
-                    select file in "${!files[@]}"; do
+                    select file in "${sorted_files[@]}"; do
                         [ "$REPLY" = 0 ] && break
                         if [ -z "$file" ]; then
                             echo invalid input >&2
@@ -99,7 +104,7 @@ function short-git {
                         fi
                         eval git add -- "$file" # 在之前进行了可重用
                     done
-                    unset files tmp
+                    unset files tmp sorted_files
                 fi
                 ;;
             c)
@@ -109,7 +114,8 @@ function short-git {
                 ;;
             ' ')
                 local cmd
-                read -erp 'git ' cmd && eval git "${cmd}"
+                read -erp 'git ' cmd \
+                    && eval git "${cmd}"
                 ;;
 
             $'\020') cmd_args=(push);;&
