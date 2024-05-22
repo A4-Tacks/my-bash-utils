@@ -157,7 +157,7 @@ function short-git {
                         printf '%q\0' "${!files[@]}" | sort -z
                     )
                     [ ${#sorted_files[@]} -eq 1 ] \
-                        && [ -z "${sorted_files[0]}" ] \
+                        && [ "${sorted_files[0]}" = "''" ] \
                         && sorted_files=()
                     PS3="select $ls_cmd target> "
                     select file in "${sorted_files[@]}"; do
