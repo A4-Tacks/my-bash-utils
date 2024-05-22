@@ -55,6 +55,7 @@ function short-git {
 				    c       commit <args...>
 				    space   :eval git
 				    :       :set extra args
+				    -       :append extra optional args
 				branch commands:
 				    s       switch
 				    r       rebase
@@ -129,6 +130,9 @@ function short-git {
                 fi
                 ;;
 
+            -) read -erp 'extra args> ' \
+                -i "${extra_args:+$extra_args }-" extra_args;;
+
             $'\020') cmd_args=(push);;&
             u) cmd_args=(remote update);;&
             [u$'\020'])
@@ -178,5 +182,18 @@ function short-git {
         fi
     done
 }
+
+if [ $# -ne 0 ]; then
+    cat <<- EOF
+	short-git is a tool that utilizes short commands
+	to improve the efficiency of simple git operations.
+
+	USAGE: ${0##*/}
+	EOF
+    case "${1-}" in
+        -h|--help) exit;;
+        *) echo unexpected args; exit 2;;
+    esac
+fi
 
 short-git
