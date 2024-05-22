@@ -85,6 +85,7 @@ function short-git {
 				    u       remote update
 				    S       show
 				    a       add
+				    A       add :mult select
 				    c       commit <args...>
 				    C       switch -c
 				    space   :eval git
