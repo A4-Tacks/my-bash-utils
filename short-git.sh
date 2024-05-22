@@ -56,6 +56,12 @@ function short-git {
 
     git_root=$(command git rev-parse --show-toplevel) || return
 
+
+	cat <<- 'EOF'
+	Welcome to short-git
+	enter `h` or `?` show help
+	EOF
+
     while
         local p="short-git> ${extra_args:+(${extra_args@Q}) }"
         p+=${edit:+[+$edit] }
