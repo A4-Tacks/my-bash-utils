@@ -53,12 +53,14 @@ function short-git {
         printf '%q: command git not found!\n' "${FUNCNAME[0]}" >&2
         return 127
     fi
+
     git_root=$(command git rev-parse --show-toplevel) || return
 
     while
-        p="short-git> ${extra_args:+(${extra_args@Q}) }"
+        local p="short-git> ${extra_args:+(${extra_args@Q}) }"
         p+=${edit:+[+$edit] }
         read -rN1 -p"$p" ch
+        unset p
     do
         [ "$ch" = $'\n' ] && printf ^M
         echo >&2
@@ -149,22 +151,18 @@ function short-git {
                     && git -c "$cmd"
                 ;;
 
-            :)
-                if [ -z "$extra_args" ]; then
+            :)  if [ -z "$extra_args" ]; then
                     read -erp 'extra args> ' extra_args
                 else
                     extra_args=
-                fi
-                ;;
+                fi;;
 
             -) read -erp 'extra args> ' \
                 -i "${extra_args:+$extra_args }-" extra_args;;
 
-            .)
-                read -erp 'edit args> ' \
+            .) read -erp 'edit args> ' \
                     -i "$prev_args" prev_args \
-                    && git -c "$prev_args"
-                ;;
+                    && git -c "$prev_args";;
 
             e) [ -z "$edit" ] && edit=e || edit=;;
 
