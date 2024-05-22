@@ -139,12 +139,10 @@ function short-git {
                     echo 'origs by empty' >&2
                     continue
                 else select orig in "${origs[@]#$prefix}"; do
-                    cmd_args+=("$orig")
+                    [ "$REPLY" != 0 ] && cmd_args+=("$orig")
                     break
                 done fi
                 ;;&
-
-            u) git "${cmd_args[@]}";;
 
             s) cmd_args=(switch);;&
             r) cmd_args=(rebase);;&
@@ -164,10 +162,12 @@ function short-git {
                     continue
                 fi
                 select ref in "${refs[@]%$'\n'}"; do
-                    git "${cmd_args[@]}" "$ref"
+                    [ "$REPLY" != 0 ] && cmd_args+=("$ref")
                     break
                 done
-                ;;
+                ;;&
+
+            [usrimMLDP$'\020']) git "${cmd_args[@]}";;
 
             *) echo "Unknown short cmd: ${ch@Q}" >&2;;
         esac
