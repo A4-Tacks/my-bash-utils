@@ -80,6 +80,7 @@ function short-git {
 				    S       show
 				    a       add
 				    c       commit <args...>
+				    C       switch -c
 				    space   :eval git
 				    :       :set extra args
 				    -       :append extra optional args
@@ -145,10 +146,17 @@ function short-git {
                 fi
                 ;;
             c) git -c commit;;
+            C)
+                local name
+                read -erp 'git switch -c ' name \
+                    && git -a switch -c "$name"
+                unset name
+                ;;
             ' ')
                 local cmd
                 read -erp 'git ' cmd \
                     && git -c "$cmd"
+                unset cmd
                 ;;
 
             :)  if [ -z "$extra_args" ]; then
