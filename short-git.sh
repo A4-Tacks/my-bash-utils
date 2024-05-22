@@ -48,7 +48,9 @@ function git {
 function short-git {
     local ch ref refs PS3 cmd_args LEC git_root orig origs \
         prefix extra_args='' \
-        prev_args='' edit=''
+        prev_args='' edit='' \
+        ls_opts=() ls_cmd
+
     if ! command -v git >/dev/null; then
         printf '%q: command git not found!\n' "${FUNCNAME[0]}" >&2
         return 127
@@ -85,7 +87,7 @@ function short-git {
 				    u       remote update
 				    S       show
 				    a       add
-				    A       add :mult select
+				    R       restore
 				    c       commit <args...>
 				    C       switch -c
 				    space   :eval git
@@ -111,13 +113,29 @@ function short-git {
             l) git -a log --oneline --graph --all;;
             p) git -a push;;
             S) git -a show;;
-            [aA])
+            a)
+                ls_opts=(
+                    --others
+                    --modified
+                    --directory
+                    --no-empty-directory
+                    --exclude-standard
+                )
+                ls_cmd=add
+                ;;&
+            R)
+                ls_opts=(
+                    --modified
+                    --no-empty-directory
+                    --exclude-standard
+                )
+                ls_cmd=restore
+                ;;&
+            [aR])
                 local file tmp
                 local -A files
                 mapfile -d '' tmp < <(
-                    command git ls-files --others --modified \
-                        --directory --no-empty-directory \
-                        --exclude-standard -z
+                    command git ls-files "${ls_opts[@]}" -z
                     printf '%d\0' $?
                 )
                 if [ "${tmp[-1]}" -ne 0 ]; then
@@ -125,31 +143,32 @@ function short-git {
                 else
                     files=()
                     for file in "${tmp[@]::${#tmp[@]}-1}"; do
-                        files[${file@Q}]=0
+                        file=./$file
+                        files[$file]=0
                         while [[ $file = */?* ]]; do
                             file=${file%/?*}
-                            files[${file@Q}]=0
+                            files[$file]=0
                         done
                     done
 
                     local -a sorted_files
                     mapfile -d '' sorted_files < <(\
-                        printf '%s\0' "${!files[@]}" | sort -z
+                        printf '%q\0' "${!files[@]}" | sort -z
                     )
                     [ ${#sorted_files[@]} -eq 1 ] \
                         && [ -z "${sorted_files[0]}" ] \
                         && sorted_files=()
-                    PS3="select add target> "
+                    PS3="select $ls_cmd target> "
                     select file in "${sorted_files[@]}"; do
                         [ "$REPLY" = 0 ] && break
                         if [ -z "$file" ]; then
                             echo invalid input >&2
                             continue
                         fi
-                        git -c add -- "$file" # 在之前进行了可重用
-                        [ "$ch" = a ] && break
+                        git -c "$ls_cmd" "$file" # 在之前进行了可重用
+                        break
                     done
-                    unset files tmp sorted_files
+                    unset file files tmp sorted_files
                 fi
                 ;;
             c) git -c commit;;
