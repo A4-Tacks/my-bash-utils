@@ -18,24 +18,49 @@ function fmt_args {
 }
 
 function git {
-    local arg a b
-    printf '==> ' >&2
-    fmt_args "$@" >&2
-    printf ' %s' "$extra_args"
-    echo >&2
-    eval command git '"$@"' "$extra_args"
+    local arg a b LEC
+
+    case "${1?}" in
+        -c)
+            shift
+            prev_args="$*${extra_args:+ $extra_args}"
+            ;;
+        -a)
+            shift
+            prev_args="$(fmt_args "$@")${extra_args:+ $extra_args}"
+            ;;
+        *) git=; ${git:?invalid args: ${1@Q}};;
+    esac
+
+    if [ -n "${edit-}" ]; then
+        read -erp "==> " -i "$prev_args" prev_args
+        edit=
+    else
+        printf '==> %s\n' "$prev_args" >&2
+    fi
+
+    eval "command git $prev_args"
+    LEC=$?
     extra_args=
+    return $LEC
 }
 
 function short-git {
-    local ch ref refs PS3 cmd_args LEC git_root orig origs prefix extra_args=
+    local ch ref refs PS3 cmd_args LEC git_root orig origs \
+        prefix extra_args='' \
+        prev_args='' edit=''
     if ! command -v git >/dev/null; then
         printf '%q: command git not found!\n' "${FUNCNAME[0]}" >&2
         return 127
     fi
     git_root=$(command git rev-parse --show-toplevel) || return
 
-    while read -rN1 -p"short-git> ${extra_args:+(${extra_args@Q}) }" ch; do
+    while
+        p="short-git> ${extra_args:+(${extra_args@Q}) }"
+        p+=${edit:+[+$edit] }
+        read -rN1 -p"$p" ch
+    do
+        [ "$ch" = $'\n' ] && printf ^M
         echo >&2
         case "${ch}" in
             [h?])
@@ -56,6 +81,8 @@ function short-git {
 				    space   :eval git
 				    :       :set extra args
 				    -       :append extra optional args
+				    .       :edit and running prev git command
+				    e       :edit and running next git command
 				branch commands:
 				    s       switch
 				    r       rebase
@@ -67,13 +94,13 @@ function short-git {
 				    ^P      push <origin>
 				EOF
                 ;;
-            H) git help;;
+            H) git -a help;;
             [qQ$'\004']) return 0;;
-            $'\n') git status;;
-            d) git diff;;
-            l) git log --oneline --graph --all;;
-            p) git push;;
-            S) git show;;
+            $'\n') git -a status;;
+            d) git -a diff;;
+            l) git -a log --oneline --graph --all;;
+            p) git -a push;;
+            S) git -a show;;
             [aA])
                 local file tmp
                 local -A files
@@ -109,21 +136,17 @@ function short-git {
                             echo invalid input >&2
                             continue
                         fi
-                        eval git add -- "$file" # 在之前进行了可重用
+                        git -c add -- "$file" # 在之前进行了可重用
                         [ "$ch" = a ] && break
                     done
                     unset files tmp sorted_files
                 fi
                 ;;
-            c)
-                local extra
-                read -erp 'git commit ' extra \
-                    && eval git commit "$extra"
-                ;;
+            c) git -c commit;;
             ' ')
                 local cmd
                 read -erp 'git ' cmd \
-                    && eval git "${cmd}"
+                    && git -c "$cmd"
                 ;;
 
             :)
@@ -137,6 +160,14 @@ function short-git {
             -) read -erp 'extra args> ' \
                 -i "${extra_args:+$extra_args }-" extra_args;;
 
+            .)
+                read -erp 'edit args> ' \
+                    -i "$prev_args" prev_args \
+                    && git -c "$prev_args"
+                ;;
+
+            e) [ -z "$edit" ] && edit=e || edit=;;
+
             $'\020') cmd_args=(push);;&
             u) cmd_args=(remote update);;&
             [u$'\020'])
@@ -146,10 +177,11 @@ function short-git {
                 if [[ ${origs[0]} = *\* ]]; then
                     echo 'origs by empty' >&2
                     continue
-                else select orig in "${origs[@]#$prefix}"; do
-                    [ "$REPLY" != 0 ] && cmd_args+=("$orig")
+                else until select orig in "${origs[@]#$prefix}"; do
+                    [ "$REPLY" = 0 ] && continue 3
+                    cmd_args+=("$orig")
                     break
-                done fi
+                done do continue 2; done fi
                 ;;&
 
             s) cmd_args=(switch);;&
@@ -169,13 +201,14 @@ function short-git {
                     echo 'refs by empty' >&2
                     continue
                 fi
-                select ref in "${refs[@]%$'\n'}"; do
-                    [ "$REPLY" != 0 ] && cmd_args+=("$ref")
+                until select ref in "${refs[@]%$'\n'}"; do
+                    [ "$REPLY" = 0 ] && continue 3
+                    cmd_args+=("$ref")
                     break
-                done
+                done do continue 2; done
                 ;;&
 
-            [usrimMLDP$'\020']) git "${cmd_args[@]}";;
+            [usrimMLDP$'\020']) git -a "${cmd_args[@]}";;
 
             *) echo "Unknown short cmd: ${ch@Q}" >&2;;
         esac
