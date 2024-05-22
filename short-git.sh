@@ -74,7 +74,7 @@ function short-git {
             l) git log --oneline --graph --all;;
             p) git push;;
             S) git show;;
-            a)
+            [aA])
                 local file tmp
                 local -A files
                 mapfile -d '' tmp < <(
@@ -99,6 +99,9 @@ function short-git {
                     mapfile -d '' sorted_files < <(\
                         printf '%s\0' "${!files[@]}" | sort -z
                     )
+                    [ ${#sorted_files[@]} -eq 1 ] \
+                        && [ -z "${sorted_files[0]}" ] \
+                        && sorted_files=()
                     PS3="select add target> "
                     select file in "${sorted_files[@]}"; do
                         [ "$REPLY" = 0 ] && break
@@ -107,6 +110,7 @@ function short-git {
                             continue
                         fi
                         eval git add -- "$file" # 在之前进行了可重用
+                        [ "$ch" = a ] && break
                     done
                     unset files tmp sorted_files
                 fi
