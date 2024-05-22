@@ -49,7 +49,7 @@ function short-git {
     local ch ref refs PS3 cmd_args LEC git_root orig origs \
         prefix extra_args='' \
         prev_args='' edit='' \
-        ls_opts=() ls_cmd
+        ls_opts=() ls_cmd cmd
 
     if ! command -v git >/dev/null; then
         printf '%q: command git not found!\n' "${FUNCNAME[0]}" >&2
@@ -95,6 +95,7 @@ function short-git {
 				    -       :append extra optional args
 				    .       :edit and running prev git command
 				    e       :edit and running next git command
+				    $       :edit and eval bash command
 				branch commands:
 				    s       switch
 				    r       rebase
@@ -179,10 +180,8 @@ function short-git {
                 unset name
                 ;;
             ' ')
-                local cmd
                 read -erp 'git ' cmd \
                     && git -c "$cmd"
-                unset cmd
                 ;;
 
             :)  if [ -z "$extra_args" ]; then
@@ -199,6 +198,8 @@ function short-git {
                     && git -c "$prev_args";;
 
             e) [ -z "$edit" ] && edit=e || edit=;;
+
+            $) read -erp'$ ' cmd && eval "$cmd";;
 
             $'\020') cmd_args=(push);;&
             u) cmd_args=(remote update);;&
