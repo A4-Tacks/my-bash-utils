@@ -21,19 +21,21 @@ function git {
     local arg a b
     printf '==> ' >&2
     fmt_args "$@" >&2
+    printf ' %s' "$extra_args"
     echo >&2
-    command git "$@"
+    eval command git '"$@"' "$extra_args"
+    extra_args=
 }
 
 function short-git {
-    local ch ref refs PS3 cmd_args LEC git_root orig origs prefix
+    local ch ref refs PS3 cmd_args LEC git_root orig origs prefix extra_args=
     if ! command -v git >/dev/null; then
         printf '%q: command git not found!\n' "${FUNCNAME[0]}" >&2
         return 127
     fi
     git_root=$(command git rev-parse --show-toplevel) || return
 
-    while read -rN1 -p'short-git> ' ch; do
+    while read -rN1 -p"short-git> ${extra_args:+(${extra_args@Q}) }" ch; do
         echo >&2
         case "${ch}" in
             [h?])
@@ -52,6 +54,7 @@ function short-git {
 				    a       add
 				    c       commit <args...>
 				    space   :eval git
+				    :       :set extra args
 				branch commands:
 				    s       switch
 				    r       rebase
@@ -116,6 +119,14 @@ function short-git {
                 local cmd
                 read -erp 'git ' cmd \
                     && eval git "${cmd}"
+                ;;
+
+            :)
+                if [ -z "$extra_args" ]; then
+                    read -erp 'extra args> ' extra_args
+                else
+                    extra_args=
+                fi
                 ;;
 
             $'\020') cmd_args=(push);;&
