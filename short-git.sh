@@ -58,7 +58,7 @@ function git {
 
 function short-git {
     local ch ref refs PS3 cmd_args LEC git_root orig origs \
-        prefix extra_args='' \
+        extra_args='' \
         prev_args='' edit='' \
         ls_opts=() ls_cmd cmd ref_pats use_c_refs used_c_refs
 
@@ -244,17 +244,13 @@ function short-git {
             $'\020') cmd_args=(push);;&
             u) cmd_args=(remote update);;&
             [u$'\020'])
-                prefix=$git_root/.git/refs/remotes/
-                origs=("$prefix"*)
                 PS3="select orig ($(fmt_args git "${cmd_args[@]}"))> "
-                if [[ ${origs[0]} = *\* ]]; then
-                    echo 'origs by empty' >&2
-                    continue
-                else until select orig in "${origs[@]#$prefix}"; do
+                origs=$(command git remote)
+                until select orig in $origs; do
                     [ "$REPLY" = 0 ] && continue 3
                     cmd_args+=("$orig")
                     break
-                done do continue 2; done fi
+                done do continue 2; done
                 ;;&
 
             *)
