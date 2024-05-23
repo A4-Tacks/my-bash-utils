@@ -1,6 +1,13 @@
 #!/usr/bin/bash
 set -o nounset
 
+# This script references a portion of the git own bash completion script to obtain similar logic
+
+readonly CONST_REFS=(
+    HEAD FETCH_HEAD ORIG_HEAD MERGE_HEAD REBASE_HEAD
+    CHERRY_PICK_HEAD REVERT_HEAD BISECT_HEAD AUTO_MERGE
+)
+
 function code {
     return "${1:-$?}"
 }
@@ -53,7 +60,7 @@ function short-git {
     local ch ref refs PS3 cmd_args LEC git_root orig origs \
         prefix extra_args='' \
         prev_args='' edit='' \
-        ls_opts=() ls_cmd cmd
+        ls_opts=() ls_cmd cmd ref_pats use_c_refs used_c_refs
 
     if ! command -v git >/dev/null; then
         printf '%q: command git not found!\n' "${FUNCNAME[0]}" >&2
@@ -250,6 +257,18 @@ function short-git {
                 done do continue 2; done fi
                 ;;&
 
+            *)
+                ref_pats=('refs/heads/*' 'refs/heads/*/**')
+                use_c_refs=1
+                ;;&
+            [rimM])
+                ref_pats=(
+                    "refs/tags/*" "refs/tags/*/**"
+                    "refs/heads/*" "refs/heads/*/**"
+                    "refs/remotes/*" "refs/remotes/*/**"
+                )
+                ;;&
+            [sD]) use_c_refs=0;;&
             s) cmd_args=(switch);;&
             r) cmd_args=(rebase);;&
             i) cmd_args=(rebase -i);;&
@@ -260,14 +279,19 @@ function short-git {
             [srimMLD$'\020'])
                 mapfile refs < <(
                     command git for-each-ref --format="%(refname:strip=2)" \
-                        'refs/heads/*' 'refs/heads/*/**'
+                        "${ref_pats[@]}"
                 )
                 PS3="select ref ($(fmt_args git "${cmd_args[@]}"))> "
                 if [ ${#refs[@]} -eq 0 ]; then
                     echo 'refs by empty' >&2
                     continue
                 fi
-                until select ref in "${refs[@]%$'\n'}"; do
+                used_c_refs=()
+                [ "${use_c_refs-}" = 1 ] &&
+                    for ref in "${CONST_REFS[@]}"; do
+                        [ -e "$git_root/.git/$ref" ] && used_c_refs+=("$ref")
+                    done
+                until select ref in "${used_c_refs[@]}" "${refs[@]%$'\n'}"; do
                     [ "$REPLY" = 0 ] && continue 3
                     cmd_args+=("$ref")
                     break
