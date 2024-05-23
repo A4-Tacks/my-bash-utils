@@ -287,16 +287,17 @@ function short-git {
 }
 
 if [ $# -ne 0 ]; then
+    case "${1-}" in
+        -h|--help);;
+        *) echo Error: unexpected args: "${*@Q}"; exit 2;;
+    esac
     cat <<- EOF
 	short-git is a tool that utilizes short commands
 	to improve the efficiency of simple git operations.
 
 	USAGE: ${0##*/}
 	EOF
-    case "${1-}" in
-        -h|--help) exit;;
-        *) echo unexpected args; exit 2;;
-    esac
+    exit
 fi
 
 short-git
