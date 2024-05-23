@@ -1,6 +1,10 @@
 #!/usr/bin/bash
 set -o nounset
 
+function code {
+    return "${1:-$?}"
+}
+
 function fmt_args {
     [ $# -eq 0 ] && return
     local -i h=0
@@ -56,6 +60,7 @@ function short-git {
         return 127
     fi
 
+    # abs path
     git_root=$(command git rev-parse --show-toplevel) || return
 
 
@@ -96,6 +101,7 @@ function short-git {
 				    .       :edit and running prev git command
 				    e       :edit and running next git command
 				    $       :edit and eval bash command
+				    w       :change work directory
 				branch commands:
 				    s       switch
 				    r       rebase
@@ -140,7 +146,7 @@ function short-git {
                     printf '%d\0' $?
                 )
                 if [ "${tmp[-1]}" -ne 0 ]; then
-                    (exit "${tmp[-1]}")
+                    code "${tmp[-1]}"
                 else
                     files=()
                     for file in "${tmp[@]::${#tmp[@]}-1}"; do
@@ -200,6 +206,33 @@ function short-git {
             e) [ -z "$edit" ] && edit=e || edit=;;
 
             $) read -erp'$ ' cmd && eval "$cmd";;
+            w)
+                echo 'r(git root) .(parent dir) space(custom) p(-)' >&2
+                if read -rN1 -p'change to> '; then
+                    echo >&2
+                    case "$REPLY" in
+                        r) REPLY=$git_root;;&
+                        .) REPLY=..;;&
+                        ' ')
+                            read -erp'change to dir> '
+                            LEC=$?
+                            code $LEC
+                            ;;&
+                        p) REPLY=-;;&
+                        ['r. p'])
+                            code && cd -- "$REPLY" > /dev/null \
+                                && command git status -s >/dev/null \
+                                && pwd \
+                                || cd - \
+                                || return
+                            ;;
+                        *)
+                            echo "Unknown cd target: ${REPLY@Q}" >&2
+                            code 2
+                            ;;
+                    esac
+                fi
+                ;;
 
             $'\020') cmd_args=(push);;&
             u) cmd_args=(remote update);;&
