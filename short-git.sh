@@ -257,7 +257,7 @@ function short-git {
             M) cmd_args=(merge --no-ff);;&
             L) cmd_args=(log --oneline --graph);;&
             D) cmd_args=(branch -d);;&
-            [srimMLDP$'\020'])
+            [srimMLD$'\020'])
                 mapfile refs < <(
                     command git for-each-ref --format="%(refname:strip=2)" \
                         'refs/heads/*' 'refs/heads/*/**'
@@ -274,7 +274,7 @@ function short-git {
                 done do continue 2; done
                 ;;&
 
-            [usrimMLDP$'\020']) git -a "${cmd_args[@]}";;
+            [usrimMLD$'\020']) git -a "${cmd_args[@]}";;
 
             *) echo "Unknown short cmd: ${ch@Q}" >&2;;
         esac
