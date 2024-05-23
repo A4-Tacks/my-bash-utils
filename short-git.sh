@@ -75,7 +75,7 @@ function short-git {
         read -rN1 -p"$p" ch
         unset p
     do
-        [ "$ch" = $'\n' ] && printf ^M
+        [ "$ch" = $'\n' ] && printf ^M # \r会自动转成\n
         echo >&2
         case "${ch}" in
             [h?])
@@ -85,7 +85,7 @@ function short-git {
 				    h / ?   :show this help
 				    H       :show git help
 				    q / ^D  quit
-				    ^M      status
+				    ^M / ^J status
 				    d       diff
 				    l       log --oneline --graph --all
 				    p       push
@@ -115,7 +115,7 @@ function short-git {
                 ;;
             H) git -a help;;
             [qQ$'\004']) return 0;;
-            $'\n') git -a status;;
+            [$'\r\n']) git -a status;;
             d) git -a diff;;
             l) git -a log --oneline --graph --all;;
             p) git -a push;;
