@@ -296,7 +296,7 @@ function short-git {
 
             [usrimMLD$'\020']) git -a "${cmd_args[@]}";;
 
-            *) echo "Unknown short cmd: ${ch@Q}" >&2;;
+            *) echo $'\a'"Unknown short cmd: ${ch@Q}" >&2;;
         esac
 
         LEC=$?
