@@ -8,6 +8,11 @@ readonly CONST_REFS=(
     CHERRY_PICK_HEAD REVERT_HEAD BISECT_HEAD AUTO_MERGE
 )
 
+readonly COMMON_OPERATIONS=(
+    'rebase --'{continue,abort,skip,quit,edit-todo,apply}
+    reflog
+)
+
 function code {
     return "${1:-$?}"
 }
@@ -102,6 +107,7 @@ function short-git {
 				    R       restore
 				    c       commit <args...>
 				    C       switch -c
+				    W       whatchanged --graph --oneline
 				    space   :eval git
 				    :       :set extra args
 				    -       :append extra optional args
@@ -109,6 +115,7 @@ function short-git {
 				    e       :edit and running next git command
 				    $       :edit and eval bash command
 				    w       :change work directory
+				    o       :common operations
 				branch commands:
 				    s       switch
 				    r       rebase
@@ -118,6 +125,9 @@ function short-git {
 				    L       log --oneline --graph
 				    D       branch -d
 				    ^P      push <origin>
+				    t       reset
+				    T       reset --hard
+				    ^W      whatchanged --graph --oneline
 				EOF
                 ;;
             H) git -a help;;
@@ -192,6 +202,11 @@ function short-git {
                     && git -a switch -c "$name"
                 unset name
                 ;;
+
+            W)
+                git -a whatchanged --graph --oneline
+                ;;
+
             ' ')
                 read -erp 'git ' cmd \
                     && git -c "$cmd"
@@ -241,6 +256,14 @@ function short-git {
                 fi
                 ;;
 
+            o)
+                PS3="select cmd> "
+                select cmd in "${COMMON_OPERATIONS[@]}"; do
+                    git -c "$cmd"
+                    break
+                done
+                ;;
+
             $'\020') cmd_args=(push);;&
             u) cmd_args=(remote update);;&
             [u$'\020'])
@@ -272,7 +295,10 @@ function short-git {
             M) cmd_args=(merge --no-ff);;&
             L) cmd_args=(log --oneline --graph);;&
             D) cmd_args=(branch -d);;&
-            [srimMLD$'\020'])
+            t) cmd_args=(reset);;&
+            T) cmd_args=(reset --hard);;&
+            $'\027') cmd_args=(whatchanged --graph --oneline);;&
+            [srimMLDtT$'\020\027'])
                 mapfile refs < <(
                     command git for-each-ref --format="%(refname:strip=2)" \
                         "${ref_pats[@]}"
@@ -294,7 +320,7 @@ function short-git {
                 done do continue 2; done
                 ;;&
 
-            [usrimMLD$'\020']) git -a "${cmd_args[@]}";;
+            [usrimMLDtT$'\020\027']) git -a "${cmd_args[@]}";;
 
             *) echo $'\a'"Unknown short cmd: ${ch@Q}" >&2;;
         esac
