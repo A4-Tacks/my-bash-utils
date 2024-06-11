@@ -282,7 +282,7 @@ function short-git {
                 ref_pats=('refs/heads/*' 'refs/heads/*/**')
                 use_c_refs=1
                 ;;&
-            [rimM$'\020'])
+            [rimMLtT$'\020\027'])
                 ref_pats=(
                     "refs/tags/*" "refs/tags/*/**"
                     "refs/heads/*" "refs/heads/*/**"
