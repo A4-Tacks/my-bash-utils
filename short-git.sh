@@ -11,6 +11,8 @@ readonly CONST_REFS=(
 readonly COMMON_OPERATIONS=(
     'rebase --'{continue,abort,skip,quit,edit-todo,apply}
     reflog
+    'diff --staged'
+    'commit --amend'
 )
 
 function code {
