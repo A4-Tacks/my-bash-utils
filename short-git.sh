@@ -102,6 +102,7 @@ function short-git {
 				    ^M / ^J status
 				    d       diff
 				    l       log --oneline --graph --all
+				    ^L      log --oneline --graph
 				    p       push
 				    u       remote update
 				    S       show
@@ -137,6 +138,7 @@ function short-git {
             [$'\r\n']) git -a status;;
             d) git -a diff;;
             l) git -a log --oneline --graph --all;;
+            $'\014') git -a log --oneline --graph;;
             p) git -a push;;
             S) git -a show;;
             a)
