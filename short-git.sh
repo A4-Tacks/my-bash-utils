@@ -119,6 +119,7 @@ function short-git {
 				    $       :edit and eval bash command
 				    w       :change work directory
 				    o       :common operations
+				    f       :append extra short optional flag
 				branch commands:
 				    s       switch
 				    r       rebase
@@ -266,6 +267,20 @@ function short-git {
                     git -c "$cmd"
                     break
                 done
+                ;;
+
+            f)
+                local flag
+                read -N1 -rp 'extra short flag> ' flag
+                case "$flag" in
+                    [$' \t\r\004']) echo >&2;&
+                    $'\n')          code 1;;
+                    *)
+                        extra_args+=" -$flag"
+                        extra_args=${extra_args# }
+                        echo >&2
+                        ;;
+                esac
                 ;;
 
             $'\020') cmd_args=(push);;&
