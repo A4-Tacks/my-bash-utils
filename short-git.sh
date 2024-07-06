@@ -13,6 +13,8 @@ readonly COMMON_OPERATIONS=(
     reflog
     'diff --staged'
     'commit --amend'
+    'log --stat --dirstat --graph --all'
+    'log --show-signature --graph --all'
 )
 
 function code {
