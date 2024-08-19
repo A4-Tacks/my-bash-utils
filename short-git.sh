@@ -15,6 +15,7 @@ readonly COMMON_OPERATIONS=(
     'commit --amend'
     'log --stat --dirstat --graph --all'
     'log --show-signature --graph --all'
+    'am --'{continue,abort,skip,quit}
 )
 
 function code {
