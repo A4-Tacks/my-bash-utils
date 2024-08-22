@@ -34,6 +34,7 @@ readonly minpage=100 maxpage=500000
 readonly base_url=https://willyoupressthebutton.com
 readonly xpath='//div[@id="dilemma"]/div[@class="rect"]/text()'
 readonly yes_xpath='//div[@class="statsBarInfoText"]/span/text()'
+readonly nextpage_xpath='//a[@class="showNextDilemma is-clickable"]/@href'
 readonly proc_name=${0##*/}
 
 EXIT_TRAPS=('stty echo')
@@ -47,11 +48,17 @@ readonly p1="$tmp/p1"
 mkfifo "$p1"
 exec 3<>"$p1"
 
-if [ $# -ne 0 ]; then
-    printf 'Usage: %q\n' "${proc_name}"
+is_random=0
+
+if [ $# -eq 1 ] && [ "$1" = -r ]; then
+    is_random=1
+elif [ $# -ne 0 ]; then
+    printf 'Usage: %q [-r]\n' "${proc_name}"
     cat <<- EOF
 	Will you press the button
 	       but on CLI
+	Options:
+	    -r      Random select pages
 	version: 0.${version?}
 	EOF
     exit 2
@@ -77,10 +84,12 @@ function dump {
 }
 
 while true; do
-    page_id=$((SRANDOM % (maxpage-minpage) + minpage))
+    if [ "$is_random" -ne 0 ] || [ -z "${page_id-}" ]; then
+        page_id=$((SRANDOM % (maxpage-minpage) + minpage))
+    fi
     page_url=${base_url}/$page_id
     html=$(wget -q -O - "${page_url}")
-    yes_url=$page_url/stats/yes
+    yes_url=$page_url/yes
 
     output=$(xmllint --html --xpath "${xpath}" - 2>/dev/null <<< "${html}")
     takes cond res "${output}"
@@ -102,14 +111,15 @@ while true; do
 
     echo '你选择 [y/n/s/q]:'
     while read -rsN1 -p'> '; do case "${REPLY}" in
-        q|$'\004')  echo exit; exit;;
-        y|$'\n')    echo 你按下了按钮; select=1; break;;
-        n)          echo 你没有按按钮; select=0; break;;
+        q|$'\004')  echo exit;          finish=1; break;;
+        y|$'\n')    echo 你按下了按钮;  select=1; break;;
+        n)          echo 你没有按按钮;  select=0; break;;
         *)          echo "Invalid input ${REPLY@Q}";;
     esac done
 
-    read -rd '' yes < "${p1}"; wait $!
-    output=$(xmllint --html --xpath "${yes_xpath}" - 2>/dev/null <<< "${yes}")
+    read -rd '' yes_page < "${p1}"; wait $!
+    if [ "${finish-0}" -eq 1 ]; then exit; fi
+    output=$(xmllint --html --xpath "${yes_xpath}" - 2>/dev/null <<< "${yes_page}")
     takes yes no "${output}"
     echo ---
     show "${yes?}" "" "${no?}"
@@ -118,11 +128,8 @@ while true; do
         "${page_id}" "${cond}" "${res}" "${tcond}" "${tres}" \
         "${select}" "${yes}" "${no}"
 
-    # report
-    if [ "${select}" -ne 0 ]; then
-        wget -q -O /dev/null $page_url/yes &
-    else
-        wget -q -O /dev/null $page_url/no &
+    if [ "$is_random" -eq 0 ]; then
+        page_id=$(xmllint --html --xpath "${nextpage_xpath}" - 2>/dev/null <<< "${yes_page}")
+        page_id=${page_id##*/}; page_id=${page_id%\"*}
     fi
-    disown
 done
