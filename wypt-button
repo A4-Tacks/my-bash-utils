@@ -89,7 +89,7 @@ while true; do
     fi
     page_url=${base_url}/$page_id
     html=$(wget -q -O - "${page_url}")
-    yes_url=$page_url/yes
+    yes_url=$page_url/stats/yes
 
     output=$(xmllint --html --xpath "${xpath}" - 2>/dev/null <<< "${html}")
     takes cond res "${output}"
@@ -109,7 +109,7 @@ while true; do
         exit $LEC
     } &
 
-    echo '你选择 [y/n/s/q]:'
+    echo '你选择 [y/n/q]:'
     while read -rsN1 -p'> '; do case "${REPLY}" in
         q|$'\004')  echo exit;          finish=1; break;;
         y|$'\n')    echo 你按下了按钮;  select=1; break;;
@@ -132,4 +132,12 @@ while true; do
         page_id=$(xmllint --html --xpath "${nextpage_xpath}" - 2>/dev/null <<< "${yes_page}")
         page_id=${page_id##*/}; page_id=${page_id%\"*}
     fi
+
+    # report
+    if [ "${select}" -ne 0 ]; then
+        wget -q -O /dev/null "$page_url"/yes &
+    else
+        wget -q -O /dev/null "$page_url"/no &
+    fi
+    disown
 done
