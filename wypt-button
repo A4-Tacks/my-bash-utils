@@ -1,0 +1,128 @@
+#!/usr/bin/bash
+set -o nounset
+set -o errtrace
+set -o pipefail
+function catch_error {
+    local LEC=$? name i line file
+    echo "Traceback (most recent call last):" >&2
+    for ((i = ${#FUNCNAME[@]} - 1; i >= 0; --i)); do
+        name="${FUNCNAME[$i]}"
+        line="${BASH_LINENO[$i]}"
+        file="${BASH_SOURCE[$i]}"
+        echo "  File ${file@Q}, line ${line}, in ${name@Q}" >&2
+    done
+    echo "Error: [ExitCode: ${LEC}]" >&2
+    exit "${LEC}"
+}
+trap catch_error ERR
+
+function import {
+    local name stat
+    for name in "${@}"; do
+        hash -- "${name}" || stat=$?
+        if test "${stat-0}" -ne 0; then
+            echo "Import executable ${name@Q} failed, install it." >&2
+            exit "${stat-1}"
+        fi
+    done
+}
+
+import xmllint cat baidu_fanyi stty rm
+
+readonly version=1
+readonly minpage=100 maxpage=500000
+readonly base_url=https://willyoupressthebutton.com
+readonly xpath='//div[@id="dilemma"]/div[@class="rect"]/text()'
+readonly yes_xpath='//div[@class="statsBarInfoText"]/span/text()'
+readonly proc_name=${0##*/}
+
+EXIT_TRAPS=('stty echo')
+trap 'for cmd in "${EXIT_TRAPS[@]}"; do eval -- "$cmd"; done' exit
+
+tmp=$(mktemp -d --tmpdir "$proc_name".XXXXXXXXXX)
+readonly tmp
+EXIT_TRAPS+=('\rm -r -- "$tmp"')
+
+readonly p1="$tmp/p1"
+mkfifo "$p1"
+exec 3<>"$p1"
+
+if [ $# -ne 0 ]; then
+    printf 'Usage: %q\n' "${proc_name}"
+    cat <<- EOF
+	Will you press the button
+	       but on CLI
+	version: 0.${version?}
+	EOF
+    exit 2
+fi
+
+function show {
+    printf "\e[1;92m%s\e[39m${2:+\n\t}%s\n\e[91m%s\e[0m\n" "${1}" "${2}" "${3}"
+}
+function takes {
+    local lines
+    mapfile -t lines <<< "${@:$#}"
+    for ((i = 1; i < $#; ++i)); do
+        printf -v "${@:i:1}" %s "${lines[i-1]}"
+    done
+}
+function dump {
+    local item
+    printf %s "${1}"
+    for item in "${@:2}"; do
+        printf '\t\t%s' "${item}"
+    done
+    echo
+}
+
+while true; do
+    page_id=$((SRANDOM % (maxpage-minpage) + minpage))
+    page_url=${base_url}/$page_id
+    html=$(wget -q -O - "${page_url}")
+    yes_url=$page_url/stats/yes
+
+    output=$(xmllint --html --xpath "${xpath}" - 2>/dev/null <<< "${html}")
+    takes cond res "${output}"
+
+    output=$(printf '%s\n' "${output}" | baidu_fanyi -m '%s%n' -)
+    takes tcond tres "${output}"
+
+    echo "page-id: $page_id"
+    show "${cond?}" but "${res?}"
+    echo ---
+    show "${tcond?}" 但是 "${tres?}"
+
+    {
+        LEC=0
+        wget -q -O "${p1}" "${yes_url}" || LEC=$?
+        printf '\0' > "${p1}"
+        exit $LEC
+    } &
+
+    echo '你选择 [y/n/s/q]:'
+    while read -rsN1 -p'> '; do case "${REPLY}" in
+        q|$'\004')  echo exit; exit;;
+        y|$'\n')    echo 你按下了按钮; select=1; break;;
+        n)          echo 你没有按按钮; select=0; break;;
+        *)          echo "Invalid input ${REPLY@Q}";;
+    esac done
+
+    read -rd '' yes < "${p1}"; wait $!
+    output=$(xmllint --html --xpath "${yes_xpath}" - 2>/dev/null <<< "${yes}")
+    takes yes no "${output}"
+    echo ---
+    show "${yes?}" "" "${no?}"
+
+    dump >> ~/.wypt_history \
+        "${page_id}" "${cond}" "${res}" "${tcond}" "${tres}" \
+        "${select}" "${yes}" "${no}"
+
+    # report
+    if [ "${select}" -ne 0 ]; then
+        wget -q -O /dev/null $page_url/yes &
+    else
+        wget -q -O /dev/null $page_url/no &
+    fi
+    disown
+done
