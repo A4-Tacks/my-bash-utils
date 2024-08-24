@@ -86,6 +86,8 @@ function short-git {
 	enter `h` or `?` show help
 	EOF
 
+    git -a status
+
     while
         local p="short-git> ${extra_args:+(${extra_args@Q}) }"
         p+=${edit:+[+$edit] }
