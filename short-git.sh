@@ -132,7 +132,8 @@ function short-git {
     local ch ref refs PS3 cmd_args LEC git_root orig \
         extra_args='' \
         prev_args='' edit='' \
-        ls_opts=() ls_cmd cmd ref_pats use_c_refs used_c_refs
+        ls_opts=() ls_cmd cmd ref_pats use_c_refs used_c_refs \
+        lines
 
     if ! command -v git >/dev/null; then
         printf '%q: command git not found!\n' "${FUNCNAME[0]}" >&2
@@ -181,6 +182,7 @@ function short-git {
 				    space   :eval git
 				    :       :set extra args
 				    -       :append extra optional args
+				    g       :append extra commit hash
 				    .       :edit and running prev git command
 				    e       :edit and running next git command
 				    $       :edit and eval bash command
@@ -285,6 +287,17 @@ function short-git {
 
             -) read -erp 'extra args> ' \
                 -i "${extra_args:+$extra_args }-" extra_args;;
+
+            g)
+                mapfile lines < <(
+                    command git log --oneline | head -n $((LINES - 2))
+                )
+                PS3='extra args> '
+                qselect "${lines[@]}" &&
+                    [ -n "${REPLY}" ] &&
+                    printf -v extra_args "%s${extra_args:+ }%q" \
+                        "$extra_args" "${REPLY%% *}"
+                ;;
 
             .) read -erp 'edit args> ' \
                     -i "$prev_args" prev_args \
