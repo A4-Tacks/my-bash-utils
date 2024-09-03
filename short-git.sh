@@ -77,7 +77,7 @@ function qselect {
             ((i++ < $#)) || break
             SELECT_MAP[${ch##*:}]="${!i}"
             printf '%2s) %s\n' "${ch%:*}" "${!i}"
-        done > >(column)
+        done > >(column | grep --color=auto $'\(^\|\t\)[^)]\+)')
         wait
 
         printf '%s\e7' "$PS3"
