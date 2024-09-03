@@ -38,6 +38,68 @@ function fmt_args {
     done
 }
 
+declare -A SELECT_MAP=()
+
+readonly SELECT_KEY_LIST=(
+    1a:a 2b:b 3c:c 4d:d 5e:e 6f:f 7g:g 8h:h 9i:i
+    {j..z}
+    {A..Z}
+    $'^A:\001' $'^B:\002' $'^E:\005' $'^F:\006'
+    $'^G:\007' $'^H:\010' $'^I:\011' $'^K:\013'
+    $'^L:\014' $'^N:\016' $'^O:\017' $'^P:\020'
+    $'^R:\022' $'^T:\024' $'^U:\025' $'^V:\026'
+    $'^W:\027' $'^X:\030' $'^Y:\031'
+)
+
+function qselect {
+    local i ch
+    REPLY=''
+    [ $# -ne 0 ] || return 0
+    SELECT_MAP=()
+    if [ $# -ge ${#SELECT_KEY_LIST[*]} ]; then
+        select ch in "$@"; do
+            if [[ $REPLY =~ ^[0-9]+$ ]]; then
+                if [ "${REPLY}" = 0 ]; then
+                    REPLY=''
+                    return
+                fi
+                REPLY=${!REPLY}
+                break
+            else
+                echo "Inavlid input ${REPLY@Q}, expect number"
+            fi
+        done
+        return
+    fi
+    while true; do
+        i=0
+        for ch in "${SELECT_KEY_LIST[@]}"; do
+            ((i++ < $#)) || break
+            SELECT_MAP[${ch##*:}]="${!i}"
+            printf '%2s) %s\n' "${ch%:*}" "${!i}"
+        done > >(column)
+        wait
+
+        printf '%s\e7' "$PS3"
+        while true; do
+            read -rN1 || return $?
+            printf '\e[K'
+            case "$REPLY" in
+                $'\n') continue 2;;
+                $'\004') echo; return 1;;
+                0|' ') echo; REPLY=''; return 0;;
+                [0-9]) REPLY=${SELECT_KEY_LIST[REPLY - 1]##*:};;
+                $'\t') printf '\e8^I';;
+            esac
+            if [ -n "${SELECT_MAP[$REPLY]-}" ]; then
+                REPLY=${SELECT_MAP[$REPLY]}
+                echo; return
+            fi
+            printf ' %s\e[K\e8' 'is invalid input'
+        done
+    done
+}
+
 function git {
     local arg a b LEC
 
@@ -67,7 +129,7 @@ function git {
 }
 
 function short-git {
-    local ch ref refs PS3 cmd_args LEC git_root orig origs \
+    local ch ref refs PS3 cmd_args LEC git_root orig \
         extra_args='' \
         prev_args='' edit='' \
         ls_opts=() ls_cmd cmd ref_pats use_c_refs used_c_refs
@@ -193,15 +255,8 @@ function short-git {
                         && [ "${sorted_files[0]}" = "''" ] \
                         && sorted_files=()
                     PS3="select $ls_cmd target> "
-                    select file in "${sorted_files[@]}"; do
-                        [ "$REPLY" = 0 ] && break
-                        if [ -z "$file" ]; then
-                            echo invalid input >&2
-                            continue
-                        fi
-                        git -c "$ls_cmd" "$file" # 在之前进行了可重用
-                        break
-                    done
+                    qselect "${sorted_files[@]}" &&
+                        git -c "$ls_cmd" "$REPLY" # 在之前进行了可重用
                     unset file files tmp sorted_files
                 fi
                 ;;
@@ -268,10 +323,9 @@ function short-git {
 
             o)
                 PS3="select cmd> "
-                select cmd in "${COMMON_OPERATIONS[@]}"; do
-                    git -c "$cmd"
-                    break
-                done
+                qselect "${COMMON_OPERATIONS[@]}" &&
+                    [ -n "${REPLY}" ] &&
+                    git -c "$REPLY"
                 ;;
 
             f)
@@ -292,12 +346,12 @@ function short-git {
             u) cmd_args=(remote update);;&
             [u$'\020'])
                 PS3="select orig ($(fmt_args git "${cmd_args[@]}"))> "
-                origs=$(command git remote)
-                until select orig in $origs; do
-                    [ "$REPLY" = 0 ] && continue 3
-                    cmd_args+=("$orig")
-                    break
-                done do continue 2; done
+                if qselect $(command git remote); then
+                    [ -z "${REPLY}" ] && continue 2
+                    cmd_args+=("$REPLY")
+                else
+                    continue
+                fi
                 ;;&
 
             *)
@@ -337,11 +391,12 @@ function short-git {
                     for ref in "${CONST_REFS[@]}"; do
                         [ -e "$git_root/.git/$ref" ] && used_c_refs+=("$ref")
                     done
-                until select ref in "${used_c_refs[@]}" "${refs[@]%$'\n'}"; do
-                    [ "$REPLY" = 0 ] && continue 3
-                    cmd_args+=("$ref")
-                    break
-                done do continue 2; done
+                if qselect "${used_c_refs[@]}" "${refs[@]%$'\n'}"; then
+                    [ -z "${REPLY}" ] && continue 2
+                    cmd_args+=("$REPLY")
+                else
+                    continue
+                fi
                 ;;&
 
             [usrimMLDtT$'\020\027']) git -a "${cmd_args[@]}";;
@@ -365,7 +420,7 @@ if [ $# -ne 0 ]; then
 	short-git is a tool that utilizes short commands
 	to improve the efficiency of simple git operations.
 
-	USAGE: ${0##*/}
+	USAGE: ${0##*/} [-h | --help]
 	EOF
     exit
 fi
