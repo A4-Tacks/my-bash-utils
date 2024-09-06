@@ -8,7 +8,7 @@ readonly CONST_REFS=(
     CHERRY_PICK_HEAD REVERT_HEAD BISECT_HEAD AUTO_MERGE
 )
 
-readonly COMMON_OPERATIONS=(
+readonly COMMON_OPERATIONS=( # {{{
     'rebase --'{continue,abort,skip,quit,edit-todo,apply}
     reflog
     'diff --staged'
@@ -16,13 +16,13 @@ readonly COMMON_OPERATIONS=(
     'log --stat --dirstat --graph --all'
     'log --show-signature --graph --all'
     'am --'{continue,abort,skip,quit}
-)
+) # }}}
 
-function code {
+function code { # {{{
     return "${1:-$?}"
-}
+} # }}}
 
-function fmt_args {
+function fmt_args { # {{{
     [ $# -eq 0 ] && return
     local -i h=0
     local arg a b
@@ -36,11 +36,11 @@ function fmt_args {
             printf %s "$b"
         fi
     done
-}
+} # }}}
 
 declare -A SELECT_MAP=()
 
-readonly SELECT_KEY_LIST=(
+readonly SELECT_KEY_LIST=( # {{{
     1a:a 2b:b 3c:c 4d:d 5e:e 6f:f 7g:g 8h:h 9i:i
     {j..z}
     {A..Z}
@@ -49,14 +49,38 @@ readonly SELECT_KEY_LIST=(
     $'^L:\014' $'^N:\016' $'^O:\017' $'^P:\020'
     $'^R:\022' $'^T:\024' $'^U:\025' $'^V:\026'
     $'^W:\027' $'^X:\030' $'^Y:\031'
-)
+) # }}}
+readonly WSELECT_KEY_LIST=( # {{{
+    {a..z}
+) # }}}
 
-function qselect {
+function qselect { # {{{
     local i ch
     REPLY=''
     [ $# -ne 0 ] || return 0
     SELECT_MAP=()
-    if [ $# -ge ${#SELECT_KEY_LIST[*]} ]; then
+    if [ -n "${TUI_BIN-}" ]; then # TUI mode {{{
+        local -i high=$(($# + 8)) cols=0 lsthigh=0 j=0
+        local args=() key
+        for i in "$@"; do
+            key=${WSELECT_KEY_LIST[j]-.}$((++j))
+            args+=("$key" "$i")
+            [ ${#i} -gt $((cols-8)) ] && cols=${#i}
+        done
+        [ $high -gt $LINES ] && high=LINES
+        ((cols < 15)) && cols=15
+        ((cols < ${#PS3})) && cols=${#PS3}
+        ((cols << 1 >= COLUMNS)) && cols=COLUMNS # 考虑可能的全角字符
+        ((${#PS3} << 1 >= COLUMNS)) && cols=COLUMNS
+        cols+=12; ((cols > COLUMNS)) && cols=COLUMNS
+        lsthigh="$# > high-8 ? high-8 : $#"
+        REPLY=$(
+            "$TUI_BIN" --menu "$PS3" $high $cols $lsthigh "${args[@]}" \
+                3>&1 >&2 2>&3
+        ) && REPLY=${REPLY:1} && REPLY=${!REPLY}
+        return
+    fi # }}}
+    if [ $# -ge ${#SELECT_KEY_LIST[*]} ]; then # Normal mode {{{
         select ch in "$@"; do
             if [[ $REPLY =~ ^[0-9]+$ ]]; then
                 if [ "${REPLY}" = 0 ]; then
@@ -70,8 +94,8 @@ function qselect {
             fi
         done
         return
-    fi
-    while true; do
+    fi # }}}
+    while true; do # Quick mode {{{
         i=0
         for ch in "${SELECT_KEY_LIST[@]}"; do
             ((i++ < $#)) || break
@@ -97,10 +121,10 @@ function qselect {
             fi
             printf ' %s\e[K\e8' 'is invalid input'
         done
-    done
-}
+    done # }}}
+} # }}}
 
-function git {
+function git { # {{{
     local arg a b LEC
 
     case "${1?}" in
@@ -126,9 +150,9 @@ function git {
     LEC=$?
     extra_args=
     return $LEC
-}
+} # }}}
 
-function short-git {
+function short-git { # {{{
     local ch ref refs PS3 cmd_args LEC git_root orig \
         extra_args='' \
         prev_args='' edit='' \
@@ -422,20 +446,28 @@ function short-git {
             echo "[ExitCode: $LEC]" >&2
         fi
     done
-}
+} # }}}
 
-if [ $# -ne 0 ]; then
-    case "${1-}" in
-        -h|--help);;
-        *) echo Error: unexpected args: "${*@Q}"; exit 2;;
-    esac
-    cat <<- EOF
-	short-git is a tool that utilizes short commands
-	to improve the efficiency of simple git operations.
+while [ $# -ne 0 ]; do case "$1" in
+    -h | --help)
+        cat <<- EOF
+		short-git is a tool that utilizes short commands
+		to improve the efficiency of simple git operations.
 
-	USAGE: ${0##*/} [-h | --help]
-	EOF
-    exit
-fi
+		USAGE: ${0##*/} [-w] [-h | --help]
+
+		OPTIONS:
+		    -w          use whiptail (TUI utils) select
+		EOF
+        exit;;
+    -w)
+        TUI_BIN=whiptail
+        if ! hash "$TUI_BIN"; then
+            echo "${TUI_BIN} not found" >&2
+            exit 127
+        fi
+        shift;;
+    *) echo Error: unexpected arg: "${1@Q}" >&2; exit 2;;
+esac done
 
 short-git
