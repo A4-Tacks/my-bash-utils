@@ -200,7 +200,7 @@ function short-git { # {{{
 				    S       show
 				    a       add
 				    R       restore
-				    c       commit <args...>
+				    c       commit
 				    C       switch -c
 				    W       whatchanged --graph --oneline
 				    space   :eval git
