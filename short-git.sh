@@ -65,13 +65,12 @@ function qselect { # {{{
         for i in "$@"; do
             key=${WSELECT_KEY_LIST[j]-.}$((++j))
             args+=("$key" "$i")
-            [ ${#i} -gt $((cols-8)) ] && cols=${#i}
+            [ $((${#key} + ${#i})) -gt $cols ] && cols=${#key}+${#i}
         done
         [ $high -gt $LINES ] && high=LINES
         ((cols < 15)) && cols=15
         ((cols < ${#PS3})) && cols=${#PS3}
-        ((cols << 1 >= COLUMNS)) && cols=COLUMNS # 考虑可能的全角字符
-        ((${#PS3} << 1 >= COLUMNS)) && cols=COLUMNS
+        ((cols <<= 1)) # 考虑可能的全角字符
         cols+=12; ((cols > COLUMNS)) && cols=COLUMNS
         lsthigh="$# > high-8 ? high-8 : $#"
         REPLY=$(
@@ -256,7 +255,7 @@ function short-git { # {{{
             [aR])
                 local file tmp
                 local -A files
-                mapfile -d '' tmp < <(
+                mapfile -td '' tmp < <(
                     command git ls-files "${ls_opts[@]}" -z
                     printf '%d\0' $?
                 )
@@ -274,7 +273,7 @@ function short-git { # {{{
                     done
 
                     local -a sorted_files
-                    mapfile -d '' sorted_files < <(\
+                    mapfile -td '' sorted_files < <(\
                         printf '%q\0' "${!files[@]}" | sort -z
                     )
                     [ ${#sorted_files[@]} -eq 1 ] \
@@ -313,7 +312,7 @@ function short-git { # {{{
                 -i "${extra_args:+$extra_args }-" extra_args;;
 
             g)
-                mapfile lines < <(
+                mapfile -t lines < <(
                     command git log --oneline | head -n $((LINES - 2))
                 )
                 PS3='extra args> '
@@ -414,7 +413,7 @@ function short-git { # {{{
             T) cmd_args=(reset --hard);;&
             $'\027') cmd_args=(whatchanged --graph --oneline);;&
             [srimMLDtT$'\020\027'])
-                mapfile refs < <(
+                mapfile -t refs < <(
                     command git for-each-ref --format="%(refname:strip=2)" \
                         "${ref_pats[@]}"
                 )
