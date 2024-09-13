@@ -156,7 +156,7 @@ function short-git { # {{{
         extra_args='' \
         prev_args='' edit='' \
         ls_opts=() ls_cmd cmd ref_pats use_c_refs used_c_refs \
-        lines
+        lines p
 
     if ! command -v git >/dev/null; then
         printf '%q: command git not found!\n' "${FUNCNAME[0]}" >&2
@@ -175,10 +175,9 @@ function short-git { # {{{
     git -a status
 
     while
-        local p="short-git> ${extra_args:+(${extra_args@Q}) }"
+        p="short-git> ${extra_args:+(${extra_args@Q}) }"
         p+=${edit:+[+$edit] }
         read -rN1 -p"$p" ch
-        unset p
     do
         [ "$ch" = $'\n' ] && printf ^M # \r会自动转成\n
         echo >&2
