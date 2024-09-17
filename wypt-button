@@ -27,6 +27,20 @@ function import {
     done
 }
 
+function help_msg {
+    printf 'Usage: %q [Options]\n\n' "${proc_name}"
+    cat <<- EOF
+	Will you press the button
+	       but on CLI
+
+	Options:
+	    -r      Random select pages
+	    -n      No running translate
+	    -h      show this help
+	version: 0.${version?}
+	EOF
+}
+
 import xmllint cat baidu_fanyi stty rm
 
 readonly version=1
@@ -48,21 +62,22 @@ readonly p1="$tmp/p1"
 mkfifo "$p1"
 exec 3<>"$p1"
 
-is_random=0
+declare -i is_random=0 use_translate=1
 
-if [ $# -eq 1 ] && [ "$1" = -r ]; then
-    is_random=1
-elif [ $# -ne 0 ]; then
-    printf 'Usage: %q [-r]\n' "${proc_name}"
-    cat <<- EOF
-	Will you press the button
-	       but on CLI
-	Options:
-	    -r      Random select pages
-	version: 0.${version?}
-	EOF
-    exit 2
-fi
+OPTIND=1
+
+while getopts rnh opt || [ $OPTIND -le $# ]
+do case "$opt" in
+    r) is_random=1;;
+    n) use_translate=0;;
+    h) help_msg; exit;;
+    \?)
+        args=("${@:OPTIND}")
+        echo "Error: invalid args (${args[*]@Q})" >&2
+        help_msg
+        exit 2
+        ;;
+esac done
 
 function show {
     printf "\e[1;92m%s\e[39m${2:+\n\t}%s\n\e[91m%s\e[0m\n" "${1}" "${2}" "${3}"
@@ -94,13 +109,15 @@ while true; do
     output=$(xmllint --html --xpath "${xpath}" - 2>/dev/null <<< "${html}")
     takes cond res "${output}"
 
-    output=$(printf '%s\n' "${output}" | baidu_fanyi -m '%s%n' -)
-    takes tcond tres "${output}"
-
     echo "page-id: $page_id"
     show "${cond?}" but "${res?}"
-    echo ---
-    show "${tcond?}" 但是 "${tres?}"
+
+    if [ "$use_translate" -ne 0 ]; then
+        output=$(printf '%s\n' "${output}" | baidu_fanyi -m '%s%n' -)
+        takes tcond tres "${output}"
+        echo ---
+        show "${tcond?}" 但是 "${tres?}"
+    fi
 
     {
         LEC=0
@@ -125,7 +142,7 @@ while true; do
     show "${yes?}" "" "${no?}"
 
     dump >> ~/.wypt_history \
-        "${page_id}" "${cond}" "${res}" "${tcond}" "${tres}" \
+        "${page_id}" "${cond}" "${res}" "${tcond--}" "${tres--}" \
         "${select}" "${yes}" "${no}"
 
     if [ "$is_random" -eq 0 ]; then
