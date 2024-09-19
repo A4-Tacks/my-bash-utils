@@ -464,6 +464,7 @@ while [ $# -ne 0 ]; do case "$1" in
             echo "${TUI_BIN} not found" >&2
             exit 127
         fi
+        export NEWT_COLORS='root=,color8;actsellistbox=color15,;actlistbox=,color8'
         shift;;
     *) echo Error: unexpected arg: "${1@Q}" >&2; exit 2;;
 esac done
