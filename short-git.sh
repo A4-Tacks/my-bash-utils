@@ -189,7 +189,7 @@ function short-git { # {{{
 				    h / ?   :show this help
 				    H       :show git help
 				    q / ^D  quit
-				    ^M / ^J status
+				    ^M / ;  status
 				    d       diff
 				    l       log --oneline --graph --all
 				    ^L      log --oneline --graph
@@ -227,7 +227,7 @@ function short-git { # {{{
                 ;;
             H) git -a help;;
             [qQ$'\004']) return 0;;
-            [$'\r\n']) git -a status;;
+            [$'\r\n;']) git -a status;;
             d) git -a diff;;
             l) git -a log --oneline --graph --all;;
             $'\014') git -a log --oneline --graph;;
