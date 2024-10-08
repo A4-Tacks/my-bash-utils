@@ -53,10 +53,7 @@ while getopts ht:H: opt; do case "$opt" in
         printf '%q: parse args failed, near by %q\n' "$0" "${!OPTIND}" >&2
         exit 2
 esac done
-if [ "$OPTIND" -le $# ]; then
-    printf '%q: unexpected arg %q\n' "$0" "${!OPTIND}" >&2
-    exit 2
-fi
+set -- "${@:OPTIND}"
 
 NAME=$(cargo read-manifest | jq .name -r)
 VERSION=$(cargo read-manifest | jq .version -r)
@@ -66,7 +63,7 @@ run hash "${HASHER:?}"
 TARGET_DIR="target/${COMPILE_TARGET:?}/"
 RENAMED_NAME="${NAME:?}_${VERSION:?}_${COMPILE_TARGET:?}"
 
-run cargo build --release --target="${COMPILE_TARGET}"
+run cargo build --release --target="${COMPILE_TARGET}" "$@"
 run test -d "${TARGET_DIR}"
 
 run cd "${TARGET_DIR}/release/" || exit
