@@ -61,7 +61,7 @@ VERSION=$(cargo read-manifest | jq .version -r)
 run hash "${HASHER:?}"
 
 TARGET_DIR="target/${COMPILE_TARGET:?}/"
-RENAMED_NAME="${NAME:?}_${VERSION:?}_${COMPILE_TARGET:?}"
+RENAMED_NAME="${NAME:?}_v${VERSION:?}_${COMPILE_TARGET:?}"
 
 run cargo build --release --target="${COMPILE_TARGET}" "$@"
 run test -d "${TARGET_DIR}"
