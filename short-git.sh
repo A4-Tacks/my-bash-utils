@@ -151,6 +151,10 @@ function git { # {{{
     return $LEC
 } # }}}
 
+function git_root { # {{{
+    command git rev-parse --show-toplevel
+} # }}}
+
 function short-git { # {{{
     local ch ref refs PS3 cmd_args LEC git_root \
         extra_args='' \
@@ -164,7 +168,7 @@ function short-git { # {{{
     fi
 
     # abs path
-    git_root=$(command git rev-parse --show-toplevel) || return
+    git_root=$(git_root) || return
 
 
 	cat <<- 'EOF'
@@ -347,6 +351,9 @@ function short-git { # {{{
                                 && pwd \
                                 || cd - \
                                 || return
+                            LEC=$?
+                            git_root=$(git_root) || return
+                            code $LEC
                             ;;
                         *)
                             echo "Unknown cd target: ${REPLY@Q}" >&2
