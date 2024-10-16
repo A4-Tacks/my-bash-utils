@@ -152,7 +152,7 @@ function git { # {{{
 } # }}}
 
 function short-git { # {{{
-    local ch ref refs PS3 cmd_args LEC git_root orig \
+    local ch ref refs PS3 cmd_args LEC git_root \
         extra_args='' \
         prev_args='' edit='' \
         ls_opts=() ls_cmd cmd ref_pats use_c_refs used_c_refs \
