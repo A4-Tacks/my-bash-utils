@@ -353,6 +353,8 @@ function short-git { # {{{
                                 || return
                             LEC=$?
                             git_root=$(git_root) || return
+                            printf 'current pwd: %q\n' "$(pwd)"
+                            printf 'git root: %q\n' "${git_root}"
                             code $LEC
                             ;;
                         *)
