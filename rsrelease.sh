@@ -26,19 +26,22 @@ function run {
     return $__LEC
 }
 
+unset NAME
+
 run hash cargo jq
 
 COMPILE_TARGET=aarch64-unknown-linux-musl
 HASHER=sha256sum
 
 OPTIND=1
-while getopts ht:H: opt; do case "$opt" in
+while getopts ht:H:n: opt; do case "$opt" in
     h)
         printf 'Usage: %q [Options]\n\n' "${0##*/}"
         printf '%s\n' \
             'Options:' \
             '    -t <target>        set target' \
             '    -H <hasher>        set hasher' \
+            '    -n <name>          set bin name' \
             '    -h                 show help' \
             && exit
         ;;
@@ -48,6 +51,9 @@ while getopts ht:H: opt; do case "$opt" in
     H)
         HASHER=$OPTARG
         ;;
+    n)
+        NAME=$OPTARG
+        ;;
     *)
         ((--OPTIND <= 0)) && OPTIND=1
         printf '%q: parse args failed, near by %q\n' "$0" "${!OPTIND}" >&2
@@ -55,7 +61,7 @@ while getopts ht:H: opt; do case "$opt" in
 esac done
 set -- "${@:OPTIND}"
 
-NAME=$(cargo read-manifest | jq .name -r)
+NAME=${NAME-$(cargo read-manifest | jq .name -r)}
 VERSION=$(cargo read-manifest | jq .version -r)
 
 run hash "${HASHER:?}"
