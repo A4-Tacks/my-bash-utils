@@ -41,7 +41,7 @@ function help_msg {
 	EOF
 }
 
-import xmllint cat stty rm
+import xmllint cat stty rm wget mktemp
 
 readonly version=1
 readonly minpage=100 maxpage=500000
