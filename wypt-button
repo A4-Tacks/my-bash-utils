@@ -41,7 +41,7 @@ function help_msg {
 	EOF
 }
 
-import xmllint cat baidu_fanyi stty rm
+import xmllint cat stty rm
 
 readonly version=1
 readonly minpage=100 maxpage=500000
@@ -78,6 +78,10 @@ do case "$opt" in
         exit 2
         ;;
 esac done
+
+if ((use_translate)); then
+    import baidu_fanyi
+fi
 
 function show {
     printf "\e[1;92m%s\e[39m${2:+\n\t}%s\n\e[91m%s\e[0m\n" "${1}" "${2}" "${3}"
