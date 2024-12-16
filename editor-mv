@@ -1,0 +1,81 @@
+#!/usr/bin/bash
+set -o nounset
+set -o errtrace
+#set -o pipefail
+function CATCH_ERROR {
+    local __LEC=$? __i
+    echo "Traceback (most recent call last):" >&2
+    for ((__i = ${#FUNCNAME[@]} - 1; __i >= 0; --__i)); do
+        printf '  File %q line %s in %q\n' >&2 \
+            "${BASH_SOURCE[$__i]}" \
+            "${BASH_LINENO[$__i]}" \
+            "${FUNCNAME[$__i]}"
+    done
+    echo "Error: [ExitCode: ${__LEC}]" >&2
+    exit "${__LEC}"
+}
+trap CATCH_ERROR ERR
+
+hash -- mktemp rm mv "${EDITOR:=vim}" || exit 127
+
+mv_flags=(-T)
+
+OPTIND=1
+while getopts hv opt; do case "$opt" in
+    v) mv_flags+=(-v);;
+    h)
+        printf 'Usage: %q [Options]\n' "${0##*/}"
+        echo "Use the \$EDITOR to batch edit the path of mv"
+        echo
+        printf '%s\n' \
+            'Options:' \
+            '    -v                 verbose mode' \
+            '    -h                 show help' \
+            '' \
+            'Exit codes:' \
+            '    2      Invalid args' \
+            '    127    Command not found' \
+            '    130    Aborted edit' \
+            && exit
+        ;;
+    *)
+        ((--OPTIND <= 0)) && OPTIND=1
+        printf '%q: parse args failed, near by %q\n' "$0" "${!OPTIND}" >&2
+        exit 2
+esac done
+
+tmp=$(mktemp --tmpdir editor-mv.XXXXXX) || exit
+trap "rm -- ${tmp@Q}" exit
+
+shift $((OPTIND - 1))
+if [ $# -eq 0 ]; then
+    printf '%q: no mv files, pos args count by zero\n' "$0"
+    exit 2
+fi
+
+printf '%s\n' "${@}" > "${tmp}"
+
+while true; do
+    "${EDITOR}" -- "${tmp}"
+    lines=()
+    mapfile -tO1 lines < "${tmp}"
+    [ ${#lines[@]} -eq $# ] && break
+
+    printf '%q: expected %d lines, found %d lines\n' "$0" "$#" "${#lines[@]}"
+    while read -rN1 -p $'Abort this mv? [Y/n]\n'; do case "${REPLY}" in
+        [Yy$'\n\x04\x1b']) echo; break;;
+        *) echo; continue 2;;
+    esac done
+    exit 3
+done
+
+exit_code=0
+
+for ((i = 1; i <= $#; ++i)); do
+    src=${!i}
+    dst=${lines[i]}
+    [ "${src}" = "${dst}" ] && continue
+    mv "${mv_flags[@]}" -- "${src}" "${dst}" || exit_code=$?
+done
+
+exit $exit_code
