@@ -1,13 +1,15 @@
 #!/usr/bin/bash
 
 arg_input=''
+empty_newline=''
 REPLY=''
 
 OPTIND=1
-while getopts aAi:h opt; do case "$opt" in
+while getopts aAi:eh opt; do case "$opt" in
     a) arg_input=first;;
     A) arg_input=last;;
     i) REPLY=$OPTARG;;
+    e) empty_newline=1;;
     h)
         printf 'Usage: %q [Options] <command> [args...]\n' "${0##*/}"
         echo 'REPL input command'
@@ -18,6 +20,7 @@ while getopts aAi:h opt; do case "$opt" in
             '    -a                 use first arg input' \
             '    -A                 use last arg input' \
             '    -i <text>          like read -i, readline init text' \
+            '    -e                 empty new line' \
             '    -h                 show help' \
             && exit
         ;;
@@ -59,6 +62,7 @@ while read -rep "$prompt" -i "$REPLY"; do
     [ $exitcode -ne 0 ] && echo $'\n'"exit code: $exitcode" >&2
     [ "$prev" != "$REPLY" ] && history -s -- "$REPLY"
     prev=$REPLY
+    [ -n "$empty_newline" ] && REPLY=''
 done
 
 echo
