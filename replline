@@ -50,7 +50,8 @@ exitcode=0
 
 prev=$REPLY
 
-while read -rep "$prompt" -i "$REPLY"; do
+while printf '\e[1m'; read -rep "$prompt" -i "$REPLY"; do
+    printf '\e[m'
     if [ "$arg_input" = first ]; then
         "$cmd" "$REPLY" "$@"
     elif [ "$arg_input" = last ]; then
