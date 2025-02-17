@@ -43,12 +43,11 @@ printf 'REPL for %q' "$cmd"
 [ $# -ne 0 ] && printf ' %q' "$@"
 echo
 
-trap 'printf "\r%s\e[K\n%s%s" "Use Ctrl-U Ctrl+D exit REPL" "$prompt" "$REPLY"' int
-
 HISTFILE=~/.replline_history
 touch -- "$HISTFILE" \
     && history -r \
     || exit
+trap 'history -w' exit
 
 exitcode=0
 
@@ -79,5 +78,4 @@ while printf '\e[1m'; read -rep "$prompt" -i "$REPLY"; do
 done
 
 echo
-history -w
 exit $exitcode
