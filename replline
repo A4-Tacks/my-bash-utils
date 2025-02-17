@@ -3,14 +3,15 @@
 arg_input=''
 empty_newline=''
 REPLY=''
-input=''
+
+unset input
 
 OPTIND=1
 while getopts aAi:f:eh opt; do case "$opt" in
     a) arg_input=first;;
     A) arg_input=last;;
     i) REPLY=$OPTARG;;
-    f) input=$OPTARG;;
+    f) input=$(< "$OPTARG");;
     e) empty_newline=1;;
     h)
         printf 'Usage: %q [Options] <command> [args...]\n' "${0##*/}"
@@ -65,8 +66,8 @@ function run { # {{{
 
 while printf '\e[1m'; read -rep "$prompt" -i "$REPLY"; do
     printf '\e[m'
-    if [ -n "$input" ]; then
-        run "$@" < "$input"
+    if [ -v input ]; then
+        run "$@" <<< "$input"
     else
         run "$@"
     fi
