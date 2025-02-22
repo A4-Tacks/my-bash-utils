@@ -65,6 +65,10 @@ function run { # {{{
 
 while printf '\e[1m'; read -rep "$prompt" -i "$REPLY"; do
     printf '\e[m'
+
+    [ "$prev" != "$REPLY" ] && history -s -- "$REPLY"
+    prev=$REPLY
+
     if [ -v input ]; then
         run "$@" <<< "$input"
     else
@@ -72,8 +76,6 @@ while printf '\e[1m'; read -rep "$prompt" -i "$REPLY"; do
     fi
     exitcode=$?
     [ $exitcode -ne 0 ] && echo $'\n'"exit code: $exitcode" >&2
-    [ "$prev" != "$REPLY" ] && history -s -- "$REPLY"
-    prev=$REPLY
     [ -n "$empty_newline" ] && REPLY=''
 done
 
