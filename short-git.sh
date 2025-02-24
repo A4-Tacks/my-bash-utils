@@ -201,6 +201,7 @@ function short-git { # {{{
 				    u       remote update
 				    S       show
 				    a       add
+				    A       add -u
 				    R       restore
 				    c       commit
 				    C       switch -c
@@ -237,6 +238,7 @@ function short-git { # {{{
             $'\014') git -a log --oneline --graph;;
             p) git -a push;;
             S) git -a show;;
+            A) git -a add -u;;
             a)
                 ls_opts=(
                     --others
