@@ -3,9 +3,12 @@
 Some personal bash scripts that may be useful.
 
 
-some simple sample
+Some Simple Sample
+===============================================================================
+
+short-git
 -------------------------------------------------------------------------------
-**short-git**
+Perform simple git operations with fewer key interactions
 
 <details>
 <summary>Show Code</summary>
@@ -68,7 +71,7 @@ short-git> a
 1a) .           2b) ./README.md
 select add target> a
 ==> add .
-short-git> 
+short-git>
 ^M
 ==> status
 On branch main
@@ -111,6 +114,92 @@ short-git> l
 * 962c588 Changed unexpected args error messages for short-git.sh
 * 2f4b558 Add builtin cd for short-git.sh
 short-git> q
+```
+
+</details>
+
+
+replline
+-------------------------------------------------------------------------------
+Quickly and repeatedly execute certain commands, with independent history
+
+<details>
+<summary>Show Code</summary>
+
+```
+$ replline -a jq -n
+REPL for jq -n
+jq> .
+null
+jq> range(7)|.*3
+0
+3
+6
+9
+12
+15
+18
+jq> range(2;7)|.*3
+6
+9
+12
+15
+18
+jq> [range(2;7)|.*3]
+[
+  6,
+  9,
+  12,
+  15,
+  18
+]
+jq>
+```
+
+</details>
+
+
+rsrelease
+-------------------------------------------------------------------------------
+Quick release of Rust packaging
+
+<details>
+<summary>Show Code</summary>
+
+```
+$ rsrelease -h
+===> 'hash' 'cargo' 'jq'
+Usage: rsrelease [Options]
+
+Options:
+    -t <target>        set target
+    -H <hasher>        set hasher
+    -n <name>          set bin name
+    -h                 show help
+$ rsrelease
+===> 'hash' 'cargo' 'jq'
+===> 'hash' 'sha256sum'
+===> 'cargo' 'build' '--release' '--target=aarch64-unknown-linux-musl'
+    Finished `release` profile [optimized] target(s) in 0.06s
+===> 'test' '-d' 'target/aarch64-unknown-linux-musl/'
+===> 'cd' 'target/aarch64-unknown-linux-musl//release/'
+===> 'test' '-f' 'test_'
+===> 'test' '-r' 'test_'
+===> 'test' '-x' 'test_'
+===> 'rm' 'test__v0.1.0_aarch64-unknown-linux-musl.tar.xz'
+===> 'tar' '-cf' 'test__v0.1.0_aarch64-unknown-linux-musl.tar' 'test_'
+===> 'xz' '-9evvT1' 'test__v0.1.0_aarch64-unknown-linux-musl.tar'
+xz: Filter chain: --lzma2=dict=64MiB,lc=3,lp=0,pb=2,mode=normal,nice=273,mf=bt4,depth=512
+xz: 674 MiB of memory is required. The limiter is disabled.
+xz: Decompression will need 65 MiB of memory.
+test__v0.1.0_aarch64-unknown-linux-musl.tar (1/1)
+  100 %       148.5 KiB / 390.0 KiB = 0.381
+===> 'sha256sum' 'test__v0.1.0_aarch64-unknown-linux-musl.tar.xz'
+===> 'echo' '493cdec1666c7f0bab84c4a24f65b92afecea8b01165bd670ae91cdf4668f751  test__v0.1.0_aarch64-unknown-linux-musl
+.tar.xz'
+$ ls target/aarch64-unknown-linux-musl/release/
+build  examples     test_    test__v0.1.0_aarch64-unknown-linux-musl.tar.xz
+deps   incremental  test_.d  test__v0.1.0_aarch64-unknown-linux-musl.tar.xz.sha256sum
 ```
 
 </details>
