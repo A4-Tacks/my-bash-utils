@@ -32,14 +32,16 @@ run hash cargo jq
 
 COMPILE_TARGET=aarch64-unknown-linux-musl
 HASHER=sha256sum
+TARGET_DIR=target
 
 OPTIND=1
-while getopts ht:H:n: opt; do case "$opt" in
+while getopts ht:T:H:n: opt; do case "$opt" in
     h)
         printf 'Usage: %q [Options]\n\n' "${0##*/}"
         printf '%s\n' \
             'Options:' \
             '    -t <target>        set target' \
+            '    -T <target>        set target dir' \
             '    -H <hasher>        set hasher' \
             '    -n <name>          set bin name' \
             '    -h                 show help' \
@@ -47,6 +49,9 @@ while getopts ht:H:n: opt; do case "$opt" in
         ;;
     t)
         COMPILE_TARGET=$OPTARG
+        ;;
+    T)
+        TARGET_DIR=$OPTARG
         ;;
     H)
         HASHER=$OPTARG
@@ -66,7 +71,7 @@ VERSION=$(cargo read-manifest | jq .version -r)
 
 run hash "${HASHER:?}"
 
-TARGET_DIR="target/${COMPILE_TARGET:?}/"
+TARGET_DIR="$TARGET_DIR/${COMPILE_TARGET:?}/"
 RENAMED_NAME="${NAME:?}_v${VERSION:?}_${COMPILE_TARGET:?}"
 
 run cargo build --release --target="${COMPILE_TARGET}" "$@"
