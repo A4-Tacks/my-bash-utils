@@ -2,15 +2,17 @@
 
 arg_input=''
 empty_newline=''
+prelude=''
 REPLY=''
 
 unset input
 
 OPTIND=1
-while getopts aAi:f:eh opt; do case "$opt" in
+while getopts aAI:i:f:eh opt; do case "$opt" in
     a) arg_input=first;;
     A) arg_input=last;;
     i) REPLY=$OPTARG;;
+    I) prelude=$OPTARG;;
     f) input=$(< "$OPTARG");;
     e) empty_newline=1;;
     h)
@@ -23,6 +25,7 @@ while getopts aAi:f:eh opt; do case "$opt" in
             '    -a                 use first arg input' \
             '    -A                 use last arg input' \
             '    -i <text>          like read -i, readline init text' \
+            '    -I <text>          like -i, but no readline and history' \
             '    -f <file>          stdin from file' \
             '    -e                 empty new line' \
             '    -h                 show help' \
@@ -55,11 +58,11 @@ prev=$REPLY
 
 function run { # {{{
     if [ "$arg_input" = first ]; then
-        "$cmd" "$REPLY" "$@"
+        "$cmd" "$input" "$@"
     elif [ "$arg_input" = last ]; then
-        "$cmd" "$@" "$REPLY"
+        "$cmd" "$@" "$input"
     else
-        "$cmd" "$@" <<< "$REPLY"
+        "$cmd" "$@" <<< "$input"
     fi
 } # }}}
 
@@ -68,6 +71,7 @@ while printf '\e[1m'; read -rep "$prompt" -i "$REPLY"; do
 
     [ "$prev" != "$REPLY" ] && history -s -- "$REPLY"
     prev=$REPLY
+    input=$prelude$REPLY
 
     if [ -v input ]; then
         run "$@" <<< "$input"
