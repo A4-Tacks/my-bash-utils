@@ -1,9 +1,10 @@
 def fold(cond; update):
   def _fold: . as $old | update | if cond then _fold else $old end;
   if cond then _fold end;
-def find(cond; update):
-  def _find: if cond then update | _find end;
-  _find;
+def skip(cond; update):
+  def _skip: if cond then update | _skip end;
+  _skip;
+def find(cond; update): skip(cond | not; update);
 def repeat: repeat(.);
 def repeat(exp; $n): foreach range($n) as $_ (.; .; exp);
 def sum: add;
