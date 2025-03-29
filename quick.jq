@@ -41,6 +41,11 @@ def take($n; gen):
   else
     break $x
   end; $i);
+def skipn($n; gen):
+  foreach gen as $i (0; .+1; if .<=$n then
+    empty
+  end | $i)
+  ;
 def issorted(gen; predicate):
   (
     label $x |
