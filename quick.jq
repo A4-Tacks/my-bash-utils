@@ -5,6 +5,7 @@ def skip(cond; update):
   def _skip: if cond then update | _skip end;
   _skip;
 def find(cond; update): skip(cond | not; update);
+def pipe($n; f): if $n > 0 then f | pipe($n-1; f) end;
 def repeat: repeat(.);
 def repeat(exp; $n): foreach range($n) as $_ (.; .; exp);
 def sum: add;
