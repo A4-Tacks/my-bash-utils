@@ -1,0 +1,60 @@
+#!/usr/bin/bash
+set -o nounset
+set -o errtrace
+#set -o pipefail
+function CATCH_ERROR {
+    local __LEC=$? __i
+    echo "Traceback (most recent call last):" >&2
+    for ((__i = ${#FUNCNAME[@]} - 1; __i >= 0; --__i)); do
+        printf '  File %q line %s in %q\n' >&2 \
+            "${BASH_SOURCE[$__i]}" \
+            "${BASH_LINENO[$__i]}" \
+            "${FUNCNAME[$__i]}"
+    done
+    echo "Error: [ExitCode: ${__LEC}]" >&2
+    exit "${__LEC}"
+}
+trap CATCH_ERROR ERR
+
+hash date tail touch
+
+file=~/.record_date
+
+OPTIND=1
+while getopts hf opt; do case "$opt" in
+    h)
+        printf 'Usage: %q [Options] [DESC]..\n' "${0##*/}"
+        echo
+        printf '%s\n' \
+            'Options:' \
+            '    -f FILE            output file' \
+            '    -h                 show help' \
+            && exit
+        ;;
+    f)
+        file=$OPTARG
+        ;;
+    :|\?)
+        ((--OPTIND <= 0)) && OPTIND=1
+        printf '%q: parse args failed, near by %q\n' "$0" "${!OPTIND}" >&2
+        exit 2
+esac done
+set -- "${@:OPTIND}"
+
+desc=$*
+desc=${desc:+  $desc}
+
+touch "$file"
+
+read -r pd pt _ < <(tail -n1 "$file") || :
+read -r s date < <(date +'%s %Y-%m-%d %H:%M:%S')
+
+ps=$(date -d "$pd $pt" +%s)
+
+if [ -n "$pd" ]; then
+    if ((s-ps >= 60*30*3)); then echo >> "$file"; fi
+    if ((s-ps >= 60*60*4)); then echo >> "$file"; fi
+fi
+
+printf '%s%s\n' "$date" "$desc" >> "$file"
+printf 'Recorded %s%s\n' "$date" "$desc"
