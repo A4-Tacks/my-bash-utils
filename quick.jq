@@ -36,6 +36,7 @@ def comb: combinations;
 def comb($n): combinations($n);
 def exclude(predicate): if predicate then empty end;
 def filter(predicate): exclude(predicate | not);
+def find(predicate): filter(predicate);
 def take($n; gen):
   label $x | foreach gen as $i (0; if .<$n then
     .+1
