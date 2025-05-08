@@ -42,9 +42,9 @@ shift
 printf -v prompt '%q' "$cmd"
 prompt+='> '
 
-printf 'REPL for %q' "$cmd"
-[ $# -ne 0 ] && printf ' %q' "$@"
-echo
+printf 'REPL for %q' "$cmd" >&2
+[ $# -ne 0 ] && printf ' %q' "$@" >&2
+echo >&2
 
 HISTFILE=~/.replline_history
 touch -- "$HISTFILE" \
@@ -66,9 +66,10 @@ function run { # {{{
     fi
 } # }}}
 
-while printf '\e[1m'; read -rep "$prompt" -i "$REPLY"; do
-    printf '\e[m'
-
+while printf '\e[1m' >&2
+    read -rep "$prompt" -i "$REPLY"
+do
+    printf '\e[m' >&2
     [ "$prev" != "$REPLY" ] && history -s -- "$REPLY"
     prev=$REPLY
     input=$prelude$REPLY
@@ -83,5 +84,5 @@ while printf '\e[1m'; read -rep "$prompt" -i "$REPLY"; do
     [ -n "$empty_newline" ] && REPLY=''
 done
 
-echo
+printf '\e[m\n' >&2
 exit $exitcode
