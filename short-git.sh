@@ -231,6 +231,7 @@ function short-git { # {{{
 				EOF
                 ;;
             H) git -a help;;
+            $'\e') read -rt0.1;&
             [qQ$'\004']) return 0;;
             [$'\r\n;']) git -a status;;
             d) git -a diff;;
