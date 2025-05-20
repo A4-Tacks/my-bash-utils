@@ -145,6 +145,7 @@ function git { # {{{
         printf '==> %s\n' "$prev_args" >&2
     fi
 
+    history -s -- "$prev_args"
     eval "command git $prev_args"
     LEC=$?
     extra_args=
@@ -304,7 +305,7 @@ function short-git { # {{{
                 ;;
 
             ' ')
-                read -erp 'git ' cmd \
+                read -erp '$ git ' cmd \
                     && git -c "$cmd"
                 ;;
 
