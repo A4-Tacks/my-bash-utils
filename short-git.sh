@@ -157,7 +157,7 @@ function git_root { # {{{
 } # }}}
 
 function short-git { # {{{
-    local ch ref refs PS3 cmd_args LEC git_root \
+    local ch ref refs PS3 cmd_args cmd_args_post LEC git_root \
         extra_args='' \
         prev_args='' edit='' \
         ls_opts=() ls_cmd cmd ref_pats use_c_refs used_c_refs \
@@ -199,7 +199,8 @@ function short-git { # {{{
 				    l       log --oneline --graph --all
 				    ^L      log --oneline --graph
 				    p       push
-				    ^Y      push --delete
+				    P       push -u <origin> {current}
+				    ^Y      push --delete {upstream} {current}
 				    u       remote update
 				    S       show HEAD
 				    a       add
@@ -395,10 +396,13 @@ function short-git { # {{{
                 esac
                 ;;
 
+            *) cmd_args_post=();;&
+
             $'\cP') cmd_args=(push);;&
             y) cmd_args=(push --delete);;&
+            P) cmd_args=(push -u); cmd_args_post=("$(command git branch --show-current)");;&
             u) cmd_args=(remote update);;&
-            [uy$'\cP'])
+            [uyP$'\cP'])
                 PS3="select orig ($(fmt_args git "${cmd_args[@]}"))> "
                 if qselect $(command git remote); then
                     [ -z "${REPLY}" ] && continue 2
@@ -453,7 +457,7 @@ function short-git { # {{{
                 fi
                 ;;&
 
-            [usrimMLDtTy$'\cP\cW']) git -a "${cmd_args[@]}";;
+            [usrimMLDtTyP$'\cP\cW']) git -a "${cmd_args[@]}" "${cmd_args_post[@]}";;
 
             *) echo $'\a'"Unknown short cmd: ${ch@Q}" >&2;;
         esac
