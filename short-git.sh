@@ -44,11 +44,11 @@ readonly SELECT_KEY_LIST=( # {{{
     1a:a 2b:b 3c:c 4d:d 5e:e 6f:f 7g:g 8h:h 9i:i
     {j..z}
     {A..Z}
-    $'^A:\001' $'^B:\002' $'^E:\005' $'^F:\006'
-    $'^G:\007' $'^H:\010' $'^I:\011' $'^K:\013'
-    $'^L:\014' $'^N:\016' $'^O:\017' $'^P:\020'
-    $'^R:\022' $'^T:\024' $'^U:\025' $'^V:\026'
-    $'^W:\027' $'^X:\030' $'^Y:\031'
+    $'^A:\cA' $'^B:\cB' $'^E:\cE' $'^F:\cF'
+    $'^G:\cG' $'^H:\cH' $'^I:\cI' $'^K:\cK'
+    $'^L:\cL' $'^N:\cN' $'^O:\cO' $'^P:\cP'
+    $'^R:\cR' $'^T:\cT' $'^U:\cU' $'^V:\cV'
+    $'^W:\cW' $'^X:\cX' $'^Y:\cY'
 ) # }}}
 readonly WSELECT_KEY_LIST=( # {{{
     {a..z}
@@ -109,7 +109,7 @@ function qselect { # {{{
             printf '\e[K'
             case "$REPLY" in
                 $'\n') continue 2;;
-                $'\004') echo; return 1;;
+                $'\cD') echo; return 1;;
                 0|' ') echo; REPLY=''; return 0;;
                 [0-9]) REPLY=${SELECT_KEY_LIST[REPLY - 1]##*:};;
                 $'\t') printf '\e8^I';;
@@ -235,13 +235,13 @@ function short-git { # {{{
                 ;;
             H) git -a help;;
             $'\e') read -rt0.1;&
-            [qQ$'\004']) return 0;;
+            [qQ$'\cd']) return 0;;
             [$'\r\n;']) git -a status;;
             d) git -a diff;;
             l) git -a log --oneline --graph --all;;
-            $'\014') git -a log --oneline --graph;;
+            $'\cL') git -a log --oneline --graph;;
             p) git -a push;;
-            $'\031')
+            $'\cY')
                 ref=$(command git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}') &&
                     git -a push "${ref%%/*}" --delete "$(command git branch --show-current)";;
             S) git -a show HEAD;;
@@ -385,7 +385,7 @@ function short-git { # {{{
                 local flag
                 read -N1 -rp 'extra short flag> ' flag
                 case "$flag" in
-                    [$' \t\r\004']) echo >&2;&
+                    [$' \t\r\cD']) echo >&2;&
                     $'\n')          code 1;;
                     *)
                         extra_args+=" -$flag"
@@ -395,10 +395,10 @@ function short-git { # {{{
                 esac
                 ;;
 
-            $'\020') cmd_args=(push);;&
+            $'\cP') cmd_args=(push);;&
             y) cmd_args=(push --delete);;&
             u) cmd_args=(remote update);;&
-            [uy$'\020'])
+            [uy$'\cP'])
                 PS3="select orig ($(fmt_args git "${cmd_args[@]}"))> "
                 if qselect $(command git remote); then
                     [ -z "${REPLY}" ] && continue 2
@@ -412,7 +412,7 @@ function short-git { # {{{
                 ref_pats=('refs/heads/*' 'refs/heads/*/**')
                 use_c_refs=1
                 ;;&
-            [rimMLtT$'\020\027'])
+            [rimMLtT$'\cP\cW'])
                 ref_pats=(
                     "refs/tags/*" "refs/tags/*/**"
                     "refs/heads/*" "refs/heads/*/**"
@@ -429,8 +429,8 @@ function short-git { # {{{
             D) cmd_args=(branch -d);;&
             t) cmd_args=(reset);;&
             T) cmd_args=(reset --hard);;&
-            $'\027') cmd_args=(whatchanged --graph --oneline);;&
-            [srimMLDtTy$'\020\027'])
+            $'\cW') cmd_args=(whatchanged --graph --oneline);;&
+            [srimMLDtTy$'\cP\cW'])
                 mapfile -t refs < <(
                     command git for-each-ref --format="%(refname:strip=2)" \
                         "${ref_pats[@]}"
@@ -453,7 +453,7 @@ function short-git { # {{{
                 fi
                 ;;&
 
-            [usrimMLDtTy$'\020\027']) git -a "${cmd_args[@]}";;
+            [usrimMLDtTy$'\cP\cW']) git -a "${cmd_args[@]}";;
 
             *) echo $'\a'"Unknown short cmd: ${ch@Q}" >&2;;
         esac
