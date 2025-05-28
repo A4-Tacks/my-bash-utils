@@ -199,6 +199,7 @@ function short-git { # {{{
 				    l       log --oneline --graph --all
 				    ^L      log --oneline --graph
 				    p       push
+				    ^Y      push --delete
 				    u       remote update
 				    S       show HEAD
 				    a       add
@@ -226,6 +227,7 @@ function short-git { # {{{
 				    L       log --oneline --graph
 				    D       branch -d
 				    ^P      push <origin>
+				    y       push --delete <origin>
 				    t       reset
 				    T       reset --hard
 				    ^W      whatchanged --graph --oneline
@@ -239,6 +241,9 @@ function short-git { # {{{
             l) git -a log --oneline --graph --all;;
             $'\014') git -a log --oneline --graph;;
             p) git -a push;;
+            $'\031')
+                ref=$(command git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}') &&
+                    git -a push "${ref%%/*}" --delete "$(command git branch --show-current)";;
             S) git -a show HEAD;;
             A) git -a add -u;;
             a)
@@ -391,8 +396,9 @@ function short-git { # {{{
                 ;;
 
             $'\020') cmd_args=(push);;&
+            y) cmd_args=(push --delete);;&
             u) cmd_args=(remote update);;&
-            [u$'\020'])
+            [uy$'\020'])
                 PS3="select orig ($(fmt_args git "${cmd_args[@]}"))> "
                 if qselect $(command git remote); then
                     [ -z "${REPLY}" ] && continue 2
@@ -424,7 +430,7 @@ function short-git { # {{{
             t) cmd_args=(reset);;&
             T) cmd_args=(reset --hard);;&
             $'\027') cmd_args=(whatchanged --graph --oneline);;&
-            [srimMLDtT$'\020\027'])
+            [srimMLDtTy$'\020\027'])
                 mapfile -t refs < <(
                     command git for-each-ref --format="%(refname:strip=2)" \
                         "${ref_pats[@]}"
@@ -447,7 +453,7 @@ function short-git { # {{{
                 fi
                 ;;&
 
-            [usrimMLDtT$'\020\027']) git -a "${cmd_args[@]}";;
+            [usrimMLDtTy$'\020\027']) git -a "${cmd_args[@]}";;
 
             *) echo $'\a'"Unknown short cmd: ${ch@Q}" >&2;;
         esac
