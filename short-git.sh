@@ -248,18 +248,23 @@ function short-git { # {{{
                     git -a push "${ref%%/*}" --delete "$(command git branch --show-current)";;
             S) git -a show HEAD;;
             k)
-                local -a branches sorted_branches
+                local -a branches sorted_branches exclude_branches
                 read -rd '' -a branches < <(
                     command git branch -a --format='%(refname:strip=2)' |
                         grep /
                 )
+                read -rd '' -a exclude_branches < <(
+                    command git for-each-ref --format="-e/%(refname:strip=2)" \
+                        'refs/heads/*' 'refs/heads/*/**'
+                )
                 mapfile -td '' sorted_branches < <(
-                    printf '%q\0' "${branches[@]}" | sort -zu
+                    printf '%q\0' "${branches[@]}" | sort -zu |
+                        grep -vz "${exclude_branches[@]}"
                 )
                 PS3="select checkout branch> "
                 qselect "${sorted_branches[@]}" &&
                     git -a checkout --track "$REPLY" --
-                unset branches sorted_branches
+                unset branches sorted_branches exclude_branches
                 ;;
             A) git -a add -u;;
             a)
