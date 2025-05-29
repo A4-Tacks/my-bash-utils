@@ -201,6 +201,7 @@ function short-git { # {{{
 				    p       push
 				    P       push -u <origin> {current}
 				    ^Y      push --delete {upstream} {current}
+				    k       checkout <remote-branch> --
 				    u       remote update
 				    S       show HEAD
 				    a       add
@@ -246,6 +247,20 @@ function short-git { # {{{
                 ref=$(command git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}') &&
                     git -a push "${ref%%/*}" --delete "$(command git branch --show-current)";;
             S) git -a show HEAD;;
+            k)
+                local -a branches sorted_branches
+                read -rd '' -a branches < <(
+                    command git branch -a --format='%(refname:strip=2)' |
+                        grep /
+                )
+                mapfile -td '' sorted_branches < <(
+                    printf '%q\0' "${branches[@]}" | sort -zu
+                )
+                PS3="select checkout branch> "
+                qselect "${sorted_branches[@]}" &&
+                    git -a checkout --track "$REPLY" --
+                unset branches sorted_branches
+                ;;
             A) git -a add -u;;
             a)
                 ls_opts=(
