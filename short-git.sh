@@ -262,7 +262,7 @@ function short-git { # {{{
                         grep -vz "${exclude_branches[@]}"
                 )
                 PS3="select checkout branch> "
-                qselect "${sorted_branches[@]}" &&
+                qselect "${sorted_branches[@]}" && [ -n "$REPLY" ] &&
                     git -a checkout --track "$REPLY" --
                 unset branches sorted_branches exclude_branches
                 ;;
