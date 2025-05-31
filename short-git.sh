@@ -274,7 +274,10 @@ function short-git { # {{{
             A) git -a add -u;;
             $'\cA')
                 local staged_files
-                mapfile -t staged_files < <(command git diff --name-only --staged)
+                mapfile -td '' staged_files < <(
+                    command git -c core.quotePath=false \
+                        diff --name-only --staged -z
+                )
                 PS3="select restore --staged target> "
                 qselect "${staged_files[@]}" && [ -n "$REPLY" ] &&
                     git -a restore --staged "$REPLY"
