@@ -201,6 +201,7 @@ function short-git { # {{{
 				    p       push
 				    P       push -u <origin> {current}
 				    ^Y      push --delete {upstream} {current}
+				    ^R      rebase {upstream} {current}
 				    k       checkout <remote-branch> --
 				    u       remote update
 				    S       show HEAD
@@ -246,6 +247,9 @@ function short-git { # {{{
             $'\cY')
                 ref=$(command git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}') &&
                     git -a push "${ref%%/*}" --delete "$(command git branch --show-current)";;
+            $'\cR')
+                ref=$(command git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}') &&
+                    git -a rebase "${ref%%/*}" "$(command git branch --show-current)";;
             S) git -a show HEAD;;
             k)
                 local -a branches sorted_branches exclude_branches
