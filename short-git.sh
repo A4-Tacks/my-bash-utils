@@ -208,6 +208,7 @@ function short-git { # {{{
 				    a       add
 				    A       add -u
 				    R       restore
+				    ^A      restore --staged
 				    c       commit
 				    C       switch -c
 				    W       whatchanged --graph --oneline
@@ -271,6 +272,14 @@ function short-git { # {{{
                 unset branches sorted_branches exclude_branches
                 ;;
             A) git -a add -u;;
+            $'\cA')
+                local staged_files
+                mapfile -t staged_files < <(command git diff --name-only --staged)
+                PS3="select restore --staged target> "
+                qselect "${staged_files[@]}" && [ -n "$REPLY" ] &&
+                    git -a restore --staged "$REPLY"
+                unset staged_files
+                ;;
             a)
                 ls_opts=(
                     --others
