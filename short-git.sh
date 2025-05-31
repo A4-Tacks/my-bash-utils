@@ -10,12 +10,14 @@ readonly CONST_REFS=(
 
 readonly COMMON_OPERATIONS=( # {{{
     'rebase --'{continue,abort,skip,quit,edit-todo,apply}
-    reflog
+    'reflog'
     'diff --staged'
     'commit --amend'
     'log --stat --dirstat --graph --all'
     'log --show-signature --graph --all'
     'am --'{continue,abort,skip,quit}
+    'merge --'{continue,abort,quit}
+    'clean -i'
 ) # }}}
 
 function code { # {{{
