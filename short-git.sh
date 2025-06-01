@@ -248,8 +248,13 @@ function short-git { # {{{
             $'\cL') git -a log --oneline --graph;;
             p) git -a push;;
             $'\cY')
-                ref=$(command git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}') &&
-                    git -a push "${ref%%/*}" --delete "$(command git branch --show-current)";;
+                if ref=$(command git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}'); then
+                    git -a status
+                    read -rp "==> Yank from ${ref@Q}? [Y/n] " REPLY
+                    [[ "$REPLY" = [Yy] ]] &&
+                        git -a push "${ref%%/*}" --delete "$(command git branch --show-current)"
+                fi
+                ;;
             $'\cR')
                 ref=$(command git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}') &&
                     git -a rebase "${ref%%/*}" "$(command git branch --show-current)";;
