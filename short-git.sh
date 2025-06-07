@@ -209,6 +209,8 @@ function short-git { # {{{
 				    S       show HEAD
 				    a       add
 				    A       add -u
+				    E       add --edit
+				    ^E      add --patch
 				    R       restore
 				    ^A      restore --staged
 				    c       commit
@@ -279,6 +281,8 @@ function short-git { # {{{
                 unset branches sorted_branches exclude_branches
                 ;;
             A) git -a add -vu;;
+            E) git -a add --edit;;
+            $'\cE') git -a add --patch;;
             $'\cA')
                 local staged_files
                 mapfile -td '' staged_files < <(
