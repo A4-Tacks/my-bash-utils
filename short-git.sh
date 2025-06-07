@@ -278,7 +278,7 @@ function short-git { # {{{
                     git -a checkout --track "$REPLY" --
                 unset branches sorted_branches exclude_branches
                 ;;
-            A) git -a add -u;;
+            A) git -a add -vu;;
             $'\cA')
                 local staged_files
                 mapfile -td '' staged_files < <(
