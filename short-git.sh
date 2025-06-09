@@ -280,7 +280,7 @@ function short-git { # {{{
                     git -a checkout --track "$REPLY" --
                 unset branches sorted_branches exclude_branches
                 ;;
-            A) git -a add -vu;;
+            A) git -a add -vu | sed 's/^/    /';;
             E) git -a add --edit;;
             $'\cE') git -a add --patch;;
             $'\cA')
