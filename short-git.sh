@@ -289,6 +289,7 @@ function short-git { # {{{
                     command git -c core.quotePath=false \
                         diff --name-only --staged -z
                 )
+                [ ${#staged_files[@]} -ne 0 ] && staged_files+=(.)
                 PS3="select restore --staged target> "
                 qselect "${staged_files[@]}" && [ -n "$REPLY" ] &&
                     git -a restore --staged "$REPLY"
