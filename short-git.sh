@@ -197,6 +197,7 @@ function short-git { # {{{
 				    H       :show git help
 				    q / ^D  quit
 				    ^M / ;  status
+				    comma   switch -
 				    d       diff
 				    l       log --oneline --graph --all
 				    ^L      log --oneline --graph
@@ -246,6 +247,7 @@ function short-git { # {{{
             $'\e') read -rt0.1;&
             [qQ$'\cd']) return 0;;
             [$'\r\n;']) git -a status;;
+            ,) git -a switch -;;
             d) git -a diff;;
             l) git -a log --oneline --graph --all;;
             $'\cL') git -a log --oneline --graph;;
