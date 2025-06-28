@@ -90,6 +90,9 @@ function qselect { # {{{
                 fi
                 REPLY=${!REPLY}
                 break
+            elif [[ $REPLY = , ]]; then
+                REPLY=-
+                return
             else
                 echo "Inavlid input ${REPLY@Q}, expect number"
             fi
@@ -113,6 +116,7 @@ function qselect { # {{{
                 $'\n') continue 2;;
                 $'\cD') echo; return 1;;
                 0|' ') echo; REPLY=''; return 0;;
+                ,) echo; REPLY=-; return 0;;
                 [0-9]) REPLY=${SELECT_KEY_LIST[REPLY - 1]##*:};;
                 $'\t') printf '\e8^I';;
             esac
