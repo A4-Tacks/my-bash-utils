@@ -95,5 +95,11 @@ for file; do
     }&
 done
 
+echo 'wait for subprocessors exit...'
+for i in $(seq "$threads"); do
+    read -ru3
+    printf '\e[K%s\r' "$i/$threads"
+done
+
 wait
 exit "$(< "$tmp/exitcode")"
