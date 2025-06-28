@@ -64,6 +64,13 @@ case "${0##*/}" in
         exit 3
 esac
 
+for file; do
+    if ! test -e "$file"; then
+        printf '%q: path not exists: %q\n' "$0" "$file" >&2
+        exit 1
+    fi
+done
+
 tmp=$(mktemp -d --tmp mtxz.XXXXXXXXXX) || exit
 trap 'wait; rm -r -- "$tmp"' exit
 readonly tmp
