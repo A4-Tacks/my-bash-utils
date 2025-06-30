@@ -297,7 +297,7 @@ function short-git { # {{{
                 local staged_files
                 mapfile -td '' staged_files < <(
                     command git -c core.quotePath=false \
-                        diff --name-only --staged -z
+                        diff --name-only --staged --relative -z
                 )
                 [ ${#staged_files[@]} -ne 0 ] && staged_files+=(.)
                 PS3="select restore --staged target> "
