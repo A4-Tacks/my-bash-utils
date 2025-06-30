@@ -21,7 +21,11 @@ hash date tail touch
 file=~/.record_date
 
 OPTIND=1
-while getopts hf opt; do case "$opt" in
+args=()
+while case "${!OPTIND---}" in
+    -*?)false;;
+    *)  args+=("${!OPTIND}"); ((++OPTIND)); continue
+esac || getopts hf opt; do case "$opt" in
     h)
         printf 'Usage: %q [Options] [DESC]..\n' "${0##*/}"
         echo
@@ -39,7 +43,7 @@ while getopts hf opt; do case "$opt" in
         printf '%q: parse args failed, near by %q\n' "$0" "${!OPTIND}" >&2
         exit 2
 esac done
-set -- "${@:OPTIND}"
+set -- "${args[@]}" "${@:OPTIND}"
 
 desc=$*
 desc=${desc:+  $desc}

@@ -8,7 +8,11 @@ keep=''
 threads=6
 
 OPTIND=1
-while getopts hkt:0123456789 opt; do case "$opt" in
+args=()
+while case "${!OPTIND---}" in
+    -*?)false;;
+    *)  args+=("${!OPTIND}"); ((++OPTIND)); continue
+esac || getopts hkt:0123456789 opt; do case "$opt" in
     h)
         printf 'Usage: %q [Options]\n' "${0##*/}"
         echo 'Multiple process xz/unxz/zstd/unzstd etc'
@@ -29,7 +33,7 @@ while getopts hkt:0123456789 opt; do case "$opt" in
         printf '%q: parse args failed, near by %q\n' "$0" "${!OPTIND}" >&2
         exit 2
 esac done
-set -- "${@:OPTIND}"
+set -- "${args[@]}" "${@:OPTIND}"
 
 if ! [[ $threads =~ ^[1-9][0-9]*$ ]]; then
     printf '%q: invalid threads number: %q\n' "$0" "$threads" >&2
