@@ -162,6 +162,10 @@ function git_root { # {{{
     command git rev-parse --show-toplevel
 } # }}}
 
+function upstream { # {{{
+    command git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}'
+} # }}}
+
 function short-git { # {{{
     local ch ref refs PS3 cmd_args cmd_args_post LEC git_root \
         extra_args='' \
@@ -210,6 +214,7 @@ function short-git { # {{{
 				    ^Y      push --delete {upstream} {current}
 				    ^R      rebase {upstream}/{current}
 				    ^I      rebase -i {upstream}/{current}
+				    ^U      remote update {upstream}
 				    k       checkout <remote-branch> --
 				    u       remote update
 				    S       show HEAD
@@ -257,7 +262,7 @@ function short-git { # {{{
             $'\cL') git -a log --oneline --graph;;
             p) git -a push;;
             $'\cY')
-                if ref=$(command git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}'); then
+                if ref=$(upstream); then
                     git -a status
                     read -rp "==> Yank from ${ref@Q}? [Y/n] " REPLY
                     [[ "$REPLY" = [Yy] ]] &&
@@ -265,11 +270,14 @@ function short-git { # {{{
                 fi
                 ;;
             $'\cR')
-                ref=$(command git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}') &&
+                ref=$(upstream) &&
                     git -a rebase "${ref%%/*}/$(command git branch --show-current)";;
             $'\cI')
-                ref=$(command git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}') &&
+                ref=$(upstream) &&
                     git -a rebase -i "${ref%%/*}/$(command git branch --show-current)";;
+            $'\cU')
+                ref=$(upstream) &&
+                    git -a remote update "${ref%%/*}";;
             S) git -a show HEAD;;
             k)
                 local -a branches sorted_branches exclude_branches
