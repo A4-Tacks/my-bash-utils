@@ -12,7 +12,7 @@ args=()
 while case "${!OPTIND---}" in
     -*?)false;;
     *)  args+=("${!OPTIND}"); ((++OPTIND)); continue
-esac || getopts hkt:0123456789 opt; do case "$opt" in
+esac || getopts hkT:0123456789 opt; do case "$opt" in
     h)
         printf 'Usage: %q [Options]\n' "${0##*/}"
         echo 'Multiple process xz/unxz/zstd/unzstd etc'
@@ -25,7 +25,7 @@ esac || getopts hkt:0123456789 opt; do case "$opt" in
             '    -h                 show help' \
             && exit
         ;;
-    t) threads=$OPTARG;;
+    T) threads=$OPTARG;;
     k) keep=1;;
     0|1|2|3|4|5|6|7|8|9) level=${level:--}$opt;;
     :|\?)
