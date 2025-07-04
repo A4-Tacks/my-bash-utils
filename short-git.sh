@@ -134,31 +134,32 @@ function qselect { # {{{
 } # }}}
 
 function git { # {{{
-    local arg opt bound='' LEC
+    local arg opt bound=''
 
     unset prev_args
     OPTIND=1
     while getopts abc opt; do case "$opt" in
         (b) bound=' --';;
-        (c) prev_args="${*:OPTIND}${extra_args:+ $extra_args}"; break;;
-        (a) prev_args="$(fmt_args "${@:OPTIND}")${extra_args:+ $extra_args}"; break;;
+        (c) prev_args="${*:OPTIND}"; break;;
+        (a) prev_args="$(fmt_args "${@:OPTIND}")"; break;;
         :|\?)
             ((--OPTIND <= 0)) && OPTIND=1
             git=; ${git:?invalid args: ${!OPTIND@Q}};;
     esac done
 
     if [ -n "${edit-}" ]; then
-        read -erp "==> " -i "$prev_args" prev_args
+        read -erp "==> " -i "$prev_args" prev_args || return
+        printf '\e[A\e[K'
         edit=
-    else
-        printf '==> %s\n' "$prev_args" >&2
     fi
+
+    prev_args=$prev_args${extra_args:+ $extra_args}
+    extra_args=''
+
+    printf '==> %s\n' "$prev_args" >&2
 
     history -s -- "$prev_args"
     eval "command git $prev_args$bound"
-    LEC=$?
-    extra_args=
-    return $LEC
 } # }}}
 
 function git_root { # {{{
