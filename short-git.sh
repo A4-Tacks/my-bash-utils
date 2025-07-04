@@ -134,19 +134,18 @@ function qselect { # {{{
 } # }}}
 
 function git { # {{{
-    local arg a b LEC
+    local arg opt bound='' LEC
 
-    case "${1?}" in
-        -c)
-            shift
-            prev_args="$*${extra_args:+ $extra_args}"
-            ;;
-        -a)
-            shift
-            prev_args="$(fmt_args "$@")${extra_args:+ $extra_args}"
-            ;;
-        *) git=; ${git:?invalid args: ${1@Q}};;
-    esac
+    unset prev_args
+    OPTIND=1
+    while getopts abc opt; do case "$opt" in
+        (b) bound=' --';;
+        (c) prev_args="${*:OPTIND}${extra_args:+ $extra_args}"; break;;
+        (a) prev_args="$(fmt_args "${@:OPTIND}")${extra_args:+ $extra_args}"; break;;
+        :|\?)
+            ((--OPTIND <= 0)) && OPTIND=1
+            git=; ${git:?invalid args: ${!OPTIND@Q}};;
+    esac done
 
     if [ -n "${edit-}" ]; then
         read -erp "==> " -i "$prev_args" prev_args
@@ -156,7 +155,7 @@ function git { # {{{
     fi
 
     history -s -- "$prev_args"
-    eval "command git $prev_args"
+    eval "command git $prev_args$bound"
     LEC=$?
     extra_args=
     return $LEC
@@ -172,7 +171,7 @@ function upstream { # {{{
 
 function short-git { # {{{
     local ch ref refs PS3 cmd_args cmd_args_post LEC git_root \
-        extra_args='' \
+        extra_args='' gitf_flags='' \
         prev_args='' edit='' \
         ls_opts=() ls_cmd cmd ref_pats use_c_refs used_c_refs \
         lines p
@@ -282,7 +281,7 @@ function short-git { # {{{
             $'\cU')
                 ref=$(upstream) &&
                     git -a remote update "${ref%%/*}";;
-            S) git -a show HEAD;;
+            S) git -ba show HEAD;;
             k)
                 local -a branches sorted_branches exclude_branches
                 read -rd '' -a branches < <(
@@ -466,7 +465,7 @@ function short-git { # {{{
                 esac
                 ;;
 
-            *) cmd_args_post=();;&
+            *) cmd_args_post=() gitf_flags='';;&
 
             $'\cP') cmd_args=(push);;&
             y) cmd_args=(push --delete);;&
@@ -494,6 +493,7 @@ function short-git { # {{{
                 )
                 ;;&
             [sD]) use_c_refs=0;;&
+            [tTL$'\cW']) gitf_flags+=b;;&
             s) cmd_args=(switch);;&
             r) cmd_args=(rebase);;&
             i) cmd_args=(rebase -i);;&
@@ -527,7 +527,8 @@ function short-git { # {{{
                 fi
                 ;;&
 
-            [usrimMLDtTyP$'\cP\cW']) git -a "${cmd_args[@]}" "${cmd_args_post[@]}";;
+            [usrimMLDtTyP$'\cP\cW'])
+                git -${gitf_flags}a "${cmd_args[@]}" "${cmd_args_post[@]}";;
 
             *) echo $'\a'"Unknown short cmd: ${ch@Q}" >&2;;
         esac
