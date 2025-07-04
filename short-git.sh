@@ -56,6 +56,10 @@ readonly WSELECT_KEY_LIST=( # {{{
     {a..z}
 ) # }}}
 
+function git_prev { # {{{
+    command git rev-parse --abbrev-ref --symbolic-full-name '@{-1}'
+} # }}}
+
 function qselect { # {{{
     local i ch
     REPLY=''
@@ -91,7 +95,7 @@ function qselect { # {{{
                 REPLY=${!REPLY}
                 break
             elif [[ $REPLY = , ]]; then
-                REPLY=-
+                REPLY=$(git_prev)
                 return
             else
                 echo "Inavlid input ${REPLY@Q}, expect number"
@@ -116,7 +120,7 @@ function qselect { # {{{
                 $'\n') continue 2;;
                 $'\cD') echo; return 1;;
                 0|' ') echo; REPLY=''; return 0;;
-                ,) echo; REPLY=-; return 0;;
+                ,) echo; REPLY=$(git_prev); return 0;;
                 [0-9]) REPLY=${SELECT_KEY_LIST[REPLY - 1]##*:};;
                 $'\t') printf '\e8^I';;
             esac
