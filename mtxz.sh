@@ -5,7 +5,7 @@ set -o nounset
 
 level=''
 keep=''
-threads=6
+threads=''
 
 OPTIND=1
 args=()
@@ -20,7 +20,7 @@ esac || getopts hkT:0123456789 opt; do case "$opt" in
         printf '%s\n' \
             'Options:' \
             '    -#                 0-9 compression level' \
-            '    -T                 threads number [default: 6]' \
+            '    -T                 threads number' \
             '    -k                 keep remove origin file' \
             '    -h                 show help' \
             && exit
@@ -35,12 +35,14 @@ esac || getopts hkT:0123456789 opt; do case "$opt" in
 esac done
 set -- "${args[@]}" "${@:OPTIND}"
 
+hash seq mkfifo mktemp grep || exit
+
+threads=${threads:-$(grep -c ^processor /proc/cpuinfo || echo 6)}
+
 if ! [[ $threads =~ ^[1-9][0-9]*$ ]]; then
     printf '%q: invalid threads number: %q\n' "$0" "$threads" >&2
     exit 2
 fi
-
-hash seq mkfifo mktemp || exit
 
 if [ -n "$keep" ]; then
     xz_keep=-k
