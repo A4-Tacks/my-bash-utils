@@ -35,7 +35,7 @@ function run { # {{{
 OPTIND=1
 while getopts hp opt; do case "$opt" in
     h)
-        printf 'Usage: %q [Options] <name>\n' "${0##*/}"
+        printf 'Usage: %q [Options] name\n' "${0##*/}"
         echo 'Quick edit .rs single file'
         echo
         printf '%s\n' \
@@ -67,7 +67,7 @@ editor=${VISUAL-${EDITOR-vim}}
 
 hash sed "$editor"
 
-name=${1:?expect name arg}
+name=${1:-main}
 
 proj=~/Project/Rust/quick-rs
 src=$proj/src
