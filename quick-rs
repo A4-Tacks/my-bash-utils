@@ -54,10 +54,12 @@ while getopts hpcd: opt; do case "$opt" in
     c) clean=1;;
     d) default=$OPTARG;;
     p)
-        hash cargo realpath sed
+        hash cargo realpath sed rm mkdir
         run cargo new quick-rs
         run cd -- "$_" || exit
         run sed -i '/^edition/a default-run = ""' Cargo.toml
+        run mkdir src/bin
+        run rm src/main.rs
         echo "Update this script proj=... to proj=${PWD@Q}"
         exit
         ;;
