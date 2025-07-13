@@ -96,7 +96,6 @@ if [ -n "$clean" ]; then
     done
 fi
 
-echo "${f@A}"
 run sed -i "/^default-run/c default-run = \"$name\"" Cargo.toml
 
 test -e "$f" || echo "$default" > "$f"
