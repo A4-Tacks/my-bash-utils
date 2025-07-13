@@ -1,0 +1,83 @@
+#!/usr/bin/bash
+set -o nounset
+set -o errtrace
+#set -o pipefail
+function CATCH_ERROR {
+    local __LEC=$? __i __j
+    echo "Traceback (most recent call last):" >&2
+    for ((__i = ${#FUNCNAME[@]} - 1; __i >= 0; --__i)); do
+        printf '  File %q line %s in %q\n' >&2 \
+            "${BASH_SOURCE[__i]}" \
+            "${BASH_LINENO[__i]}" \
+            "${FUNCNAME[__i]}"
+        if ((BASH_LINENO[__i])) && [ -f "${BASH_SOURCE[__i]}" ]; then
+            for ((__j = 0; __j < BASH_LINENO[__i]; ++__j)); do
+                read -r REPLY
+            done < "${BASH_SOURCE[__i]}"
+            printf '    %s\n' "$REPLY" >&2
+        fi
+    done
+    echo "Error: [ExitCode: ${__LEC}]" >&2
+    exit "${__LEC}"
+}
+trap CATCH_ERROR ERR
+
+function run { # {{{
+    local arg
+    printf '==> %q' "$1"
+    for arg in "${@:2}"; do
+        printf ' %s' "${arg@Q}"
+    done
+    echo
+    "$@"
+} # }}}
+
+OPTIND=1
+while getopts hp opt; do case "$opt" in
+    h)
+        printf 'Usage: %q [Options] <name>\n' "${0##*/}"
+        echo 'Quick edit .rs single file'
+        echo
+        printf '%s\n' \
+            'Options:' \
+            '    -p                 init quick-rs project' \
+            '    -h                 show help' \
+            && exit
+        ;;
+    p)
+        hash cargo realpath sed
+        run cargo new quick-rs
+        run cd -- "$_" || exit
+        run sed -i '/^edition/a default-run = ""' Cargo.toml
+        echo "Update this script proj=... to proj=${PWD@Q}"
+        exit
+        ;;
+    :|\?)
+        ((--OPTIND <= 0)) && OPTIND=1
+        printf '%q: parse args failed, near by %q\n' "$0" "${!OPTIND}" >&2
+        exit 2
+esac done
+set -- "${@:OPTIND}"
+if [ $# -gt 1 ]; then
+    printf '%q: unexpected arg %q\n' "$0" "$2" >&2
+    exit 2
+fi
+
+editor=${VISUAL-${EDITOR-vim}}
+
+hash sed "$editor"
+
+name=${1:?expect name arg}
+
+proj=~/Project/Rust/quick-rs
+src=$proj/src
+f=$src/bin/$name.rs
+
+echo "${f@A}" >&2
+
+run cd -- "$proj" || exit
+run sed -i "/^default-run/c default-run = \"$name\"" Cargo.toml
+
+test -e "$f" || echo 'fn main() {}' > "$f"
+
+run "$editor" "$f"
