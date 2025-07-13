@@ -32,8 +32,13 @@ function run { # {{{
     "$@"
 } # }}}
 
+shopt -s nullglob
+
+clean=''
+default='fn main() {}'
+
 OPTIND=1
-while getopts hp opt; do case "$opt" in
+while getopts hpcd: opt; do case "$opt" in
     h)
         printf 'Usage: %q [Options] name\n' "${0##*/}"
         echo 'Quick edit .rs single file'
@@ -41,9 +46,13 @@ while getopts hp opt; do case "$opt" in
         printf '%s\n' \
             'Options:' \
             '    -p                 init quick-rs project' \
+            '    -c                 clean default files and target' \
+            '    -d <default>       set default src' \
             '    -h                 show help' \
             && exit
         ;;
+    c) clean=1;;
+    d) default=$OPTARG;;
     p)
         hash cargo realpath sed
         run cargo new quick-rs
@@ -70,14 +79,24 @@ hash sed "$editor"
 name=${1:-main}
 
 proj=~/Project/Rust/quick-rs
-src=$proj/src
-f=$src/bin/$name.rs
-
-echo "${f@A}" >&2
+bin=$proj/src/bin
+f=$bin/$name.rs
 
 run cd -- "$proj" || exit
+
+if [ -n "$clean" ]; then
+    echo 'Cleaning ...'
+    run cargo clean || :
+
+    for file in "$bin"/*; do
+        file_text=$(< "$file")
+        test "$file_text" = "$default" && run rm -- "$file"
+    done
+fi
+
+echo "${f@A}"
 run sed -i "/^default-run/c default-run = \"$name\"" Cargo.toml
 
-test -e "$f" || echo 'fn main() {}' > "$f"
+test -e "$f" || echo "$default" > "$f"
 
 run "$editor" "$f"
