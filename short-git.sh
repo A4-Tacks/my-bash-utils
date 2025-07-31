@@ -229,6 +229,7 @@ function short-git { # {{{
 				    R       restore
 				    ^A      restore --staged
 				    c       commit
+				    b       commit -anm TODO --no-gpg-sign --branch
 				    C       switch -c
 				    W       whatchanged --graph --oneline
 				    space   :eval git
@@ -369,6 +370,7 @@ function short-git { # {{{
                 fi
                 ;;
             c) git -c commit;;
+            b) git -a commit -anm TODO --no-gpg-sign --branch;;
             C)
                 local name
                 read -erp 'git switch -c ' name \
