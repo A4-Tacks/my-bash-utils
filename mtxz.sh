@@ -44,6 +44,10 @@ if ! [[ $threads =~ ^[1-9][0-9]*$ ]]; then
     exit 2
 fi
 
+if [ "$threads" -gt $# ]; then
+    threads=$#
+fi
+
 if [ -n "$keep" ]; then
     xz_keep=-k
     zst_keep=''
