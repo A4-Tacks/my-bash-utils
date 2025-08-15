@@ -215,6 +215,7 @@ function short-git { # {{{
 				    ^L      log --oneline --graph
 				    p       push
 				    P       push -u <origin> {current}
+				    ^P      push <origin>
 				    ^Y      push --delete {upstream} {current}
 				    ^R      rebase {upstream}/{current}
 				    ^I      rebase -i {upstream}/{current}
@@ -250,7 +251,6 @@ function short-git { # {{{
 				    M       merge --no-ff
 				    L       log --oneline --graph
 				    D       branch -d
-				    ^P      push <origin>
 				    y       push --delete <origin>
 				    t       reset
 				    T       reset --hard
@@ -488,7 +488,7 @@ function short-git { # {{{
                 ref_pats=('refs/heads/*' 'refs/heads/*/**')
                 use_c_refs=1
                 ;;&
-            [rimMLtT$'\cP\cW'])
+            [rimMLtT$'\cW'])
                 ref_pats=(
                     "refs/tags/*" "refs/tags/*/**"
                     "refs/heads/*" "refs/heads/*/**"
@@ -507,7 +507,7 @@ function short-git { # {{{
             t) cmd_args=(reset);;&
             T) cmd_args=(reset --hard);;&
             $'\cW') cmd_args=(whatchanged --graph --oneline);;&
-            [srimMLDtTy$'\cP\cW'])
+            [srimMLDtTy$'\cW'])
                 mapfile -t refs < <(
                     command git for-each-ref --format="%(refname:strip=2)" \
                         "${ref_pats[@]}"
