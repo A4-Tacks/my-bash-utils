@@ -489,13 +489,15 @@ function short-git { # {{{
                 use_c_refs=1
                 ;;&
             [rimMLtT$'\cW'])
-                ref_pats=(
+                ref_pats+=(
                     "refs/tags/*" "refs/tags/*/**"
-                    "refs/heads/*" "refs/heads/*/**"
                     "refs/remotes/*" "refs/remotes/*/**"
                 )
                 ;;&
-            [sD]) use_c_refs=0;;&
+            [rmM])
+                ref_pats+=(--no-merged HEAD)
+                ;;&
+            [sDrimM]) use_c_refs=0;;&
             [tTL$'\cW']) gitf_flags+=b;;&
             s) cmd_args=(switch);;&
             r) cmd_args=(rebase);;&
@@ -509,8 +511,9 @@ function short-git { # {{{
             $'\cW') cmd_args=(whatchanged --graph --oneline);;&
             [srimMLDtTy$'\cW'])
                 mapfile -t refs < <(
-                    command git for-each-ref --format="%(refname:strip=2)" \
-                        "${ref_pats[@]}"
+                    command git for-each-ref --format="%(objectname) %(refname:strip=2)" \
+                        "${ref_pats[@]}" |
+                        awk '!x[$1]++{print$2}'
                 )
                 PS3="select ref ($(fmt_args git "${cmd_args[@]}"))> "
                 if [ ${#refs[@]} -eq 0 ]; then
