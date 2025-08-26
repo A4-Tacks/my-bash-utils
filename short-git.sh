@@ -513,7 +513,7 @@ function short-git { # {{{
                 mapfile -t refs < <(
                     command git for-each-ref --format="%(objectname) %(refname:strip=2)" \
                         "${ref_pats[@]}" |
-                        awk '!x[$1]++{print$2}'
+                        awk '!x[$1]++||$2!~"/"{print$2}'
                 )
                 PS3="select ref ($(fmt_args git "${cmd_args[@]}"))> "
                 if [ ${#refs[@]} -eq 0 ]; then
