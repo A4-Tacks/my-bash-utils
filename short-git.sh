@@ -502,8 +502,8 @@ function short-git { # {{{
             s) cmd_args=(switch);;&
             r) cmd_args=(rebase);;&
             i) cmd_args=(rebase -i);;&
-            m) cmd_args=(merge);;&
-            M) cmd_args=(merge --no-ff);;&
+            m) cmd_args=(merge --no-edit);;&
+            M) cmd_args=(merge --no-ff --no-edit);;&
             L) cmd_args=(log --oneline --graph);;&
             D) cmd_args=(branch -d);;&
             t) cmd_args=(reset);;&
