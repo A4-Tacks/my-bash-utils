@@ -35,10 +35,15 @@ function run { # {{{
 shopt -s nullglob
 
 clean=''
+rename_to=''
 default='fn main() {}'
 
+args=()
 OPTIND=1
-while getopts hpcd: opt; do case "$opt" in
+while case "${!OPTIND---}" in
+    -*?)false;;
+    *)  args+=("${!OPTIND}"); ((++OPTIND)); continue
+esac || getopts hpr:cd: opt; do case "$opt" in
     h)
         printf 'Usage: %q [Options] name\n' "${0##*/}"
         echo 'Quick edit .rs single file'
@@ -46,12 +51,14 @@ while getopts hpcd: opt; do case "$opt" in
         printf '%s\n' \
             'Options:' \
             '    -p                 init quick-rs project' \
+            '    -r <name>          rename to name, and edit new file' \
             '    -c                 clean default files and target' \
             '    -d <default>       set default src' \
             '    -h                 show help' \
             && exit
         ;;
     c) clean=1;;
+    r) rename_to=$OPTARG;;
     d) default=$OPTARG;;
     p)
         hash cargo realpath sed rm mkdir
@@ -68,7 +75,7 @@ while getopts hpcd: opt; do case "$opt" in
         printf '%q: parse args failed, near by %q\n' "$0" "${!OPTIND}" >&2
         exit 2
 esac done
-set -- "${@:OPTIND}"
+set -- "${args[@]}" "${@:OPTIND}"
 if [ $# -gt 1 ]; then
     printf '%q: unexpected arg %q\n' "$0" "$2" >&2
     exit 2
@@ -76,7 +83,7 @@ fi
 
 editor=${VISUAL-${EDITOR-vim}}
 
-hash sed "$editor"
+hash sed "$editor" mv
 
 name=${1:-main}
 
@@ -98,6 +105,7 @@ fi
 
 run sed -i "/^default-run/c default-run = \"$name\"" Cargo.toml
 
+test -n "$rename_to" && run mv -- "$f" "$bin/${rename_to%.rs}.rs"
 test -e "$f" || echo "$default" > "$f"
 
 run "$editor" "$f"
