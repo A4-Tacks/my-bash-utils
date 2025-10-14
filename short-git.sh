@@ -175,7 +175,7 @@ function short-git { # {{{
         extra_args='' gitf_flags='' \
         prev_args='' edit='' \
         ls_opts=() ls_cmd cmd ref_pats use_c_refs used_c_refs \
-        lines p
+        lines p remote branch
 
     if ! command -v git >/dev/null; then
         printf '%q: command git not found!\n' "${FUNCNAME[0]}" >&2
@@ -217,6 +217,7 @@ function short-git { # {{{
 				    P       push -u <origin> {current}
 				    ^P      push <origin>
 				    ^Y      push --delete {upstream} {current}
+				    Y       :delete merged upstream and local branches
 				    ^R      rebase {upstream}/{current}
 				    ^I      rebase -i {upstream}/{current}
 				    ^U      remote update {upstream}
@@ -271,6 +272,27 @@ function short-git { # {{{
                     read -rp "==> Yank from ${ref@Q}? [Y/n] " REPLY
                     [[ "$REPLY" = [Yy] ]] &&
                         git -a push "${ref%%/*}" --delete "$(command git branch --show-current)"
+                fi
+                ;;
+            Y)
+                ref=$(command git show --format='%H' --no-patch)
+                read -rd '' -a refs < <(
+                    command git for-each-ref --merged HEAD \
+                        'refs/remotes/*/*' --format='%(objectname) %(refname:strip=2)' |
+                        awk -vr="$ref" '!x[$1]++&&$1!=r{print$2}'
+                )
+                PS3="select delete branch> "
+                if qselect "${refs[@]}" && [ -n "$REPLY" ]; then
+                    while read -r ref; do
+                        git -a branch --delete "$ref"
+                    done < <(
+                        command git for-each-ref --points-at="$REPLY" \
+                            'refs/heads/*' --format='%(refname:strip=2)'
+                    )
+
+                    remote=${REPLY%%/*}
+                    branch=${REPLY#*/}
+                    git -a push "$remote" --delete "$branch"
                 fi
                 ;;
             $'\cR')
