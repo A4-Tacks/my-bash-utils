@@ -251,7 +251,6 @@ function short-git { # {{{
 				    M       merge --no-ff
 				    L       log --oneline --graph
 				    D       branch -d
-				    y       push --delete <origin>
 				    t       reset
 				    T       reset --hard
 				    ^W      whatchanged --graph --oneline
@@ -471,10 +470,9 @@ function short-git { # {{{
             *) cmd_args_post=() gitf_flags='';;&
 
             $'\cP') cmd_args=(push);;&
-            y) cmd_args=(push --delete);;&
             P) cmd_args=(push -u); cmd_args_post=("$(command git branch --show-current)");;&
             u) cmd_args=(remote update);;&
-            [uyP$'\cP'])
+            [uP$'\cP'])
                 PS3="select orig ($(fmt_args git "${cmd_args[@]}"))> "
                 if qselect $(command git remote); then
                     [ -z "${REPLY}" ] && continue 2
@@ -509,7 +507,7 @@ function short-git { # {{{
             t) cmd_args=(reset);;&
             T) cmd_args=(reset --hard);;&
             $'\cW') cmd_args=(whatchanged --graph --oneline);;&
-            [srimMLDtTy$'\cW'])
+            [srimMLDtT$'\cW'])
                 mapfile -t refs < <(
                     command git for-each-ref --format="%(objectname) %(refname:strip=2)" \
                         "${ref_pats[@]}" |
@@ -533,7 +531,7 @@ function short-git { # {{{
                 fi
                 ;;&
 
-            [usrimMLDtTyP$'\cP\cW'])
+            [usrimMLDtTP$'\cP\cW'])
                 git -${gitf_flags}a "${cmd_args[@]}" "${cmd_args_post[@]}";;
 
             *) echo $'\a'"Unknown short cmd: ${ch@Q}" >&2;;
