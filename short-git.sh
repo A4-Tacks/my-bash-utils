@@ -142,7 +142,7 @@ function git { # {{{
         (b) bound=' --';;
         (c) prev_args="${*:OPTIND}"; break;;
         (a) prev_args="$(fmt_args "${@:OPTIND}")"; break;;
-        :|\?)
+        *)
             ((--OPTIND <= 0)) && OPTIND=1
             git=; ${git:?invalid args: ${!OPTIND@Q}};;
     esac done
