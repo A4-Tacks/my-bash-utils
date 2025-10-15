@@ -1,0 +1,47 @@
+#!/usr/bin/bash
+set -o nounset
+set -o errtrace
+set -o pipefail
+function CATCH_ERROR { # {{{
+    local __LEC=$? __i __j
+    echo "Traceback (most recent call last):" >&2
+    for ((__i = ${#FUNCNAME[@]} - 1; __i >= 0; --__i)); do
+        printf '  File %q line %s in %q\n' >&2 \
+            "${BASH_SOURCE[__i]}" \
+            "${BASH_LINENO[__i]}" \
+            "${FUNCNAME[__i]}"
+        if ((BASH_LINENO[__i])) && [ -f "${BASH_SOURCE[__i]}" ]; then
+            for ((__j = 0; __j < BASH_LINENO[__i]; ++__j)); do
+                read -r REPLY
+            done < "${BASH_SOURCE[__i]}"
+            printf '    %s\n' "$REPLY" >&2
+        fi
+    done
+    echo "Error: [ExitCode: ${__LEC}]" >&2
+    exit "${__LEC}"
+}
+trap CATCH_ERROR ERR # }}}
+
+opts=()
+while [ $# -ne 0 ]; do case "${1}" in
+    -h|--help)
+        printf 'Usage: %q [Options] <ref>\n' "${0##*/}"
+        echo
+        printf '%s\n' \
+            'Options:' \
+            '    -h                 show help' \
+            && exit
+        ;;
+    -*)
+        opts+=("$1")
+        shift
+        ;;
+    *) break;;
+esac done
+
+ref=$(git show --format='%H' --no-patch "${1:?expected a git ref}" || exit)
+upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}')
+set -- "${opts[@]}" "${@:2}"
+
+set -x
+git fetch "${upstream%%/*}" "$ref" "$@"
