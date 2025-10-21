@@ -3,6 +3,7 @@ set -o nounset
 set -o errtrace
 set -o pipefail
 function CATCH_ERROR { # {{{
+    set +x
     local __LEC=$? __i __j
     echo "Traceback (most recent call last):" >&2
     for ((__i = ${#FUNCNAME[@]} - 1; __i >= 0; --__i)); do
@@ -39,9 +40,10 @@ while [ $# -ne 0 ]; do case "${1}" in
     *) break;;
 esac done
 
+depth=${2-3}
 ref=$(git show --format='%H' --no-patch "${1:?expected a git ref}" || exit)
 upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}')
-set -- "${opts[@]}" "${@:2}"
+set -- "${opts[@]}" "${@:3}"
 
 set -x
-git fetch "${upstream%%/*}" "$ref" "$@"
+git fetch "${upstream%%/*}" "$ref" --depth="$depth" "$@"
