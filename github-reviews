@@ -89,7 +89,7 @@ reduce .[] as $review ({};
   }]
 )
 | to_entries[]
-|
+| "",
 ( .value[0].path
 , (.key | "│ "+splits("\n"))
 , (.value[]
