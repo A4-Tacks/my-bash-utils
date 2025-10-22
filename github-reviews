@@ -104,7 +104,7 @@ def elap:
   | [" seconds", " minutes", "h", "d", " months", " years"] as $label
   | last(to_entries[]
     | [.value, $label[.key]]
-    | select(first > 0)
+    | select(first > 1)
     | join("")
   )
   ;
