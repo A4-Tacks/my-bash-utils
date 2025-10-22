@@ -104,7 +104,7 @@ reduce inputs[] as $review ({};
   }]
 )
 | to_entries
-| map(if .key == "" then .value = (.value[] | [.]) end)
+| map(if .key == "" then .value = (.value[] | select(.state != "COMMENTED") | [.]) end)
 | sort_by(.value[0].created_at | fromdate)[]
 |
 ( (.value[0].path | values)
