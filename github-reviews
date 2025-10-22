@@ -60,7 +60,7 @@ echo "api: ${api[*]@Q}"
 curl -- "${api[@]}" |
 jq -nr \
 '
-def fi($n): "\(.)\(" "*($n-length))";
+def fi($n): tostring | .+" "*($n-length);
 def csim(seq): [seq]|"\u001b[\(join(";"))m";
 def csim: csim(empty);
 def title: .[:1]+(.[1:]|ascii_downcase);
@@ -113,7 +113,7 @@ reduce inputs[] as $review ({};
   | (if .updated_at and .updated_at != .created_at then
       " update at \(.updated_at|elap)" else ""
     end) as $update
-  | "\n"+csim(1)+("\(.user)\(association)\(state)"|fi(45))+csim+" • \((.created_at|elap)+$update)"
+  | "\n"+csim(1)+("\(.user)\(association)\(state)"|fi(50))+csim+" • \((.created_at|elap)+$update)"
   , ""
   , if .body | length != 0 then
       .body | "  "+splits("\n")
