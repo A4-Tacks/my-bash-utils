@@ -87,17 +87,26 @@ def expected($ty):
   ;
 def elap:
   [
-    (now | strftime("%y %m %d %H")),(fromdate | strftime("%y %m %d %H"))
-    | split(" ")[]
+    (now, fromdate)
+    | strftime("%s")
     | tonumber
-  ] as [$ny, $nm, $nd, $nh, $y, $m, $d, $h] |
-  first(
-    [$ny-$y, " years"],
-    [$nm-$m, "m"],
-    [$nd-$d, "d"],
-    [$nh-$h, "h"]
+  ]
+  | first-last
+  | [
+      ., (
+        ./60 | ., (
+          ./60 | ., (
+            ./24 | ., (
+              ./30.4375 | ., (
+                ./12)))))
+      | floor
+    ]
+  | [" seconds", " minutes", "h", "d", " months", " years"] as $label
+  | last(to_entries[]
+    | [.value, $label[.key]]
     | select(first > 0)
-  ) | join("")
+    | join("")
+  )
   ;
 def association:
   if .author_association and .author_association != "NONE" then
