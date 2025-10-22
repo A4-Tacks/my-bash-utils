@@ -54,10 +54,11 @@ url=$(gh pr view --json url -- "$@" | jq -r .url || exit)
 content=${url#https://github.com/}
 id=${content##*/}
 repo=${content%/pull/$id}
-api=https://api.github.com/repos/$repo/pulls/$id/comments
+api=(https://api.github.com/repos/$repo/{issues/$id/comments,pulls/$id/{comments,reviews}})
 
-#echo "api: ${api@Q}"
-curl -- "$api" | jq -r \
+echo "api: ${api[*]@Q}"
+curl -- "${api[@]}" |
+jq -nr \
 '
 def fi($n): "\(.)\(" "*($n-length))";
 def csim(seq): [seq]|"\u001b[\(join(";"))m";
@@ -77,28 +78,51 @@ def elap:
     | select(first > 0)
   ) | join("")
   ;
-reduce .[] as $review ({};
-  .[$review.diff_hunk] += [$review | {
+def association:
+  if .author_association and .author_association != "NONE" then
+    " (\(.author_association|title))"
+  else
+    ""
+  end;
+def state:
+  .state | if . then
+    " "+ascii_downcase
+  else
+    ""
+  end
+  ;
+reduce inputs[] as $review ({};
+  .[$review.diff_hunk // ""] += [$review | {
     user: .user.login,
     body,
-    created_at,
+    created_at: .created_at // .submitted_at,
     updated_at,
     html_url,
     author_association,
     path,
+    state,
   }]
 )
-| to_entries[]
-| "",
-( .value[0].path
-, (.key | "│ "+splits("\n"))
+| to_entries
+| map(if .key == "" then .value = (.value[] | [.]) end)
+| sort_by(.value[0].created_at | fromdate)[]
+|
+( (.value[0].path | values)
+, (.key | select(length != 0) | "│ "+splits("\n"))
 , (.value[]
-  | (if .updated_at != .created_at then " update at \(.updated_at|elap)" else "" end) as $update
-  | "\n"+csim(1)+("\(.user) (\(.author_association|title))"|fi(45))+csim+" • \((.created_at|elap)+$update)"
+  | (if .updated_at and .updated_at != .created_at then
+      " update at \(.updated_at|elap)" else ""
+    end) as $update
+  | "\n"+csim(1)+("\(.user)\(association)\(state)"|fi(45))+csim+" • \((.created_at|elap)+$update)"
   , ""
-  , (.body | "  "+splits("\n"))
+  , if .body | length != 0 then
+      .body | "  "+splits("\n")
+    else
+      "  "+csim(90)+"No body provided"+csim
+    end
   , ""
   , csim(90)+"View the full review: "+.html_url+csim
   )
+, (select(.value[0].path != null) | "", "─"*70)
 )
 '
