@@ -3,8 +3,8 @@ set -o nounset
 set -o errtrace
 set -o pipefail
 function CATCH_ERROR { # {{{
-    set +x
     local __LEC=$? __i __j
+    set +x
     echo "Traceback (most recent call last):" >&2
     for ((__i = ${#FUNCNAME[@]} - 1; __i >= 0; --__i)); do
         printf '  File %q line %s in %q\n' >&2 \
@@ -64,6 +64,11 @@ def fi($n): tostring | .+" "*($n-length);
 def csim(seq): [seq]|"\u001b[\(join(";"))m";
 def csim: csim(empty);
 def title: .[:1]+(.[1:]|ascii_downcase);
+def expected($ty):
+  if type != $ty then
+    debug | error("unexpected input type \(type), expected a \($ty)")
+  end
+  ;
 def elap:
   [
     (now | strftime("%y %m %d %H")),(fromdate | strftime("%y %m %d %H"))
@@ -91,7 +96,7 @@ def state:
     ""
   end
   ;
-reduce inputs[] as $review ({};
+reduce (inputs | expected("array"))[] as $review ({};
   .[$review.diff_hunk // ""] += [$review | {
     user: .user.login,
     body,
