@@ -1,0 +1,104 @@
+#!/usr/bin/bash
+set -o nounset
+set -o errtrace
+set -o pipefail
+function CATCH_ERROR { # {{{
+    set +x
+    local __LEC=$? __i __j
+    echo "Traceback (most recent call last):" >&2
+    for ((__i = ${#FUNCNAME[@]} - 1; __i >= 0; --__i)); do
+        printf '  File %q line %s in %q\n' >&2 \
+            "${BASH_SOURCE[__i]}" \
+            "${BASH_LINENO[__i]}" \
+            "${FUNCNAME[__i]}"
+        if ((BASH_LINENO[__i])) && [ -f "${BASH_SOURCE[__i]}" ]; then
+            for ((__j = 0; __j < BASH_LINENO[__i]; ++__j)); do
+                read -r REPLY
+            done < "${BASH_SOURCE[__i]}"
+            printf '    %s\n' "$REPLY" >&2
+        fi
+    done
+    echo "Error: [ExitCode: ${__LEC}]" >&2
+    exit "${__LEC}"
+}
+trap CATCH_ERROR ERR # }}}
+
+OPTIND=1
+while getopts h opt; do case "$opt" in
+    h)
+        printf 'Usage: %q [Options]\n' "${0##*/}"
+        echo 'show github pull request reviews'
+        echo
+        printf '%s\n' \
+            'Options:' \
+            '    -h                 show help' \
+            && exit
+        ;;
+    :|\?)
+        ((--OPTIND <= 0)) && OPTIND=1
+        printf '%q: parse args failed, near by %q\n' "$0" "${!OPTIND}" >&2
+        exit 2
+esac done
+set -- "${@:OPTIND}"
+
+function fail { # {{{
+    echo "fail: ${*@Q}" >&2
+    return 1
+} # }}}
+
+hash gh curl jq
+
+url=$(gh pr view --json url -- "$@" | jq -r .url || exit)
+[[ $url = */pull/* ]] || fail "$url"
+[[ $url = https://github.com/* ]] || fail "$url"
+content=${url#https://github.com/}
+id=${content##*/}
+repo=${content%/pull/$id}
+api=https://api.github.com/repos/$repo/pulls/$id/comments
+
+#echo "api: ${api@Q}"
+curl -- "$api" | jq -r \
+'
+def fi($n): "\(.)\(" "*($n-length))";
+def csim(seq): [seq]|"\u001b[\(join(";"))m";
+def csim: csim(empty);
+def title: .[:1]+(.[1:]|ascii_downcase);
+def elap:
+  [
+    (now | strftime("%y %m %d %H")),(fromdate | strftime("%y %m %d %H"))
+    | split(" ")[]
+    | tonumber
+  ] as [$ny, $nm, $nd, $nh, $y, $m, $d, $h] |
+  first(
+    [$ny-$y, " years"],
+    [$nm-$m, "m"],
+    [$nd-$d, "d"],
+    [$nh-$h, "h"]
+    | select(first > 0)
+  ) | join("")
+  ;
+reduce .[] as $review ({};
+  .[$review.diff_hunk] += [$review | {
+    user: .user.login,
+    body,
+    created_at,
+    updated_at,
+    html_url,
+    author_association,
+    path,
+  }]
+)
+| to_entries[]
+|
+( .value[0].path
+, (.key | "│ "+splits("\n"))
+, (.value[]
+  | (if .updated_at != .created_at then " update at \(.updated_at|elap)" else "" end) as $update
+  | "\n"+csim(1)+("\(.user) (\(.author_association|title))"|fi(45))+csim+" • \((.created_at|elap)+$update)"
+  , ""
+  , (.body | "  "+splits("\n"))
+  , ""
+  , csim(90)+"View the full review: "+.html_url+csim
+  )
+)
+'
