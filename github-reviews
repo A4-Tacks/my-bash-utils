@@ -57,7 +57,7 @@ repo=${content%/pull/$id}
 api=(https://api.github.com/repos/$repo/{issues/$id/comments,pulls/$id/{comments,reviews}})
 
 echo "api: ${api[*]@Q}"
-curl -- "${api[@]}" |
+curl --no-progress-meter -- "${api[@]}" |
 jq -nr \
 '
 def fi($n): tostring | .+" "*($n-length);
