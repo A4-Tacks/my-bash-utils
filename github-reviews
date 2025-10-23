@@ -80,6 +80,7 @@ def fi($n): tostring | .+" "*($n-length);
 def csim(seq): [seq]|"\u001b[\(join(";"))m";
 def csim: csim(empty);
 def title: .[:1]+(.[1:]|ascii_downcase);
+def bool($x): $x | length | . != 0 and . != null;
 def expected($ty):
   if type != $ty then
     debug | error("unexpected input type \(type), expected a \($ty)")
@@ -134,18 +135,18 @@ reduce (inputs | expected("array"))[] as $review ({};
   }]
 )
 | to_entries
-| map(if .key == "" then .value = (.value[] | select(.state != "COMMENTED") | [.]) end)
+| map(if .key == "" then .value = (.value[] | select(.state != "COMMENTED" or bool(.body)) | [.]) end)
 | sort_by(.value[0].created_at | fromdate)[]
 |
 ( (.value[0].path | values)
-, (.key | select(length != 0) | "│ "+splits("\n"))
+, (.key | select(bool(.)) | "│ "+splits("\n"))
 , (.value[]
   | (if .updated_at and .updated_at != .created_at then
       " update at \(.updated_at|elap)" else ""
     end) as $update
   | "\n"+csim(1)+("\(.user)\(association)\(state)"|fi(50))+csim+" • \((.created_at|elap)+$update)"
   , ""
-  , if .body | length != 0 then
+  , if bool(.body) then
       .body | "  "+splits("\n")
     else
       "  "+csim(90)+"No body provided"+csim
