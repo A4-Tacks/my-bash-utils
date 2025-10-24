@@ -76,6 +76,17 @@ echo "api: ${api[*]@Q}"
 curl --no-progress-meter "${req_opts[@]}" -- "${api[@]}" |
 jq -nr \
 '
+{
+  "+1":       "👍",
+  "-1":       "👎",
+  "laugh":    "😄",
+  "hooray":   "🎉",
+  "confused": "❓",
+  "heart":    "❤️",
+  "rocket":   "🚀",
+  "eyes":     "👀",
+} as $reactions |
+
 def fi($n): tostring | .+" "*($n-length);
 def csim(seq): [seq]|"\u001b[\(join(";"))m";
 def csim: csim(empty);
@@ -136,6 +147,13 @@ def state:
     ""
   end
   ;
+def reactions:
+  [.reactions
+  | values
+  | to_entries[]
+  | "\(.value | select(. != 0)) \($reactions[.key] | values)"
+  ] | join(" ") | select(bool(.))
+  ;
 reduce (inputs | expected("array"))[] as $review ({};
   .[$review.diff_hunk // ""] += [$review | {
     user: .user.login,
@@ -146,6 +164,7 @@ reduce (inputs | expected("array"))[] as $review ({};
     author_association,
     path,
     state,
+    reactions,
   }]
 )
 | .[][].body |= clean
@@ -160,6 +179,7 @@ reduce (inputs | expected("array"))[] as $review ({};
       " update at \(.updated_at|elap)" else ""
     end) as $update
   | "\n"+csim(1)+("\(.user)\(association)\(state)"|fi(50))+csim+" • \((.created_at|elap)+$update)"
+  , reactions
   , ""
   , if bool(.body) then
       .body | "  "+splits("\n")
