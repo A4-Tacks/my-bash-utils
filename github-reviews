@@ -118,6 +118,11 @@ def elap:
     | join("")
   )
   ;
+def clean:
+  if type == "string" then
+    rtrim
+  end
+  ;
 def association:
   if .author_association and .author_association != "NONE" then
     " (\(.author_association|title))"
@@ -143,6 +148,7 @@ reduce (inputs | expected("array"))[] as $review ({};
     state,
   }]
 )
+| .[][].body |= clean
 | to_entries
 | map(if .key == "" then .value = (.value[] | select(.state != "COMMENTED" or bool(.body)) | [.]) end)
 | sort_by(.value[0].created_at | fromdate)[]
