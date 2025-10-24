@@ -81,6 +81,15 @@ def csim(seq): [seq]|"\u001b[\(join(";"))m";
 def csim: csim(empty);
 def title: .[:1]+(.[1:]|ascii_downcase);
 def bool($x): $x | length | . != 0 and . != null;
+def differ:
+  if startswith("+") then
+    csim(32)+.+csim
+  elif startswith("-") then
+    csim(31)+.+csim
+  elif startswith("@@") then
+    csim(36)+.+csim
+  end
+  ;
 def expected($ty):
   if type != $ty then
     debug | error("unexpected input type \(type), expected a \($ty)")
@@ -139,7 +148,7 @@ reduce (inputs | expected("array"))[] as $review ({};
 | sort_by(.value[0].created_at | fromdate)[]
 |
 ( (.value[0].path | values)
-, (.key | select(bool(.)) | "│ "+splits("\n"))
+, (.key | select(bool(.)) | splits("\n") | "│ "+differ)
 , (.value[]
   | (if .updated_at and .updated_at != .created_at then
       " update at \(.updated_at|elap)" else ""
