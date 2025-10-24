@@ -72,6 +72,7 @@ repo=${content%/pull/$id}
 api=(https://api.github.com/repos/$repo/{issues/$id/comments,pulls/$id/{comments,reviews}})
 
 echo "api: ${api[*]@Q}"
+echo
 
 curl --no-progress-meter "${req_opts[@]}" -- "${api[@]}" |
 jq -nr \
