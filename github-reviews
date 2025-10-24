@@ -102,6 +102,11 @@ def differ:
     csim(36)+.+csim
   end
   ;
+def bodyer:
+  if startswith("> ") then
+    csim(38,5,251)+"│ "+.[2:]+csim
+  end
+  ;
 def expected($ty):
   if type != $ty then
     debug | error("unexpected input type \(type), expected a \($ty)")
@@ -183,7 +188,7 @@ reduce (inputs | expected("array"))[] as $review ({};
   , reactions
   , ""
   , if bool(.body) then
-      .body | "  "+splits("\n")
+      .body | splits("\n") | "  "+bodyer
     else
       "  "+csim(90)+"No body provided"+csim
     end
