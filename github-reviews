@@ -24,6 +24,7 @@ function CATCH_ERROR { # {{{
 trap CATCH_ERROR ERR # }}}
 
 req_opts=(
+    --retry 4
     -H "Accept: application/vnd.github+json"
     -H "X-GitHub-Api-Version: 2022-11-28"
 )
