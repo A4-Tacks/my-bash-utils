@@ -168,8 +168,9 @@ def reactions:
   | "\(.value | select(. != 0)) \($reactions[.key] | values)"
   ] | join(" ") | select(bool(.))
   ;
+"\u0000topLevel" as $top |
 reduce (inputs | expected("array"))[] as $review ({};
-  .[$review.diff_hunk // ""] += [$review | {
+  .[$review.diff_hunk // $top] += [$review | {
     user: .user.login,
     body,
     created_at: .created_at // .submitted_at,
@@ -183,11 +184,11 @@ reduce (inputs | expected("array"))[] as $review ({};
 )
 | .[][].body |= clean
 | to_entries
-| map(if .key == "" then .value = (.value[] | select(.state != "COMMENTED" or bool(.body)) | [.]) end)
+| map(if .key == $top then .value = (.value[] | select(.state != "COMMENTED" or bool(.body)) | [.]) end)
 | sort_by(.value[0].created_at | fromdate)[]
 |
 ( (.value[0].path | values | "", .)
-, (.key | select(bool(.)) | [splits("\n")] | fold_too_long[] | "│ "+differ)
+, (.key | select(. != $top) | [splits("\n")] | fold_too_long[] | "│ "+differ)
 , (.value[]
   | (if .updated_at and .updated_at != .created_at then
       " update at \(.updated_at|elap)" else ""
