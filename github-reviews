@@ -109,15 +109,20 @@ def bodyer:
     csim(38,5,251)+"│ "+.[2:]+csim
   end
   ;
+def diff_title:
+  first(reverse[] | select(test("^.\\S.{3}"))[1:])
+  ;
 def expected($ty):
   if type != $ty then
     debug | error("unexpected input type \(type), expected a \($ty)")
   end
   ;
-def fold_too_long:
+def patch_formatter:
   expected("array") |
   if length > 50 then
-    .[20:length-20] |= ["% Folded \(length) lines"]
+    .[20:length-20] |= ["% Folded \(length) lines %\(" "+diff_title // "")"]
+  elif length == 0 or . == [""] then
+    ["% No patch provided"]
   end
   ;
 def elap:
@@ -188,7 +193,7 @@ reduce (inputs | expected("array"))[] as $review ({};
 | sort_by(.value[0].created_at | fromdate)[]
 |
 ( (.value[0].path | values | "", .)
-, (.key | select(. != $top) | [splits("\n")] | fold_too_long[] | "│ "+differ)
+, (.key | select(. != $top) | [splits("\n")] | patch_formatter[] | "│ "+differ)
 , (.value[]
   | (if .updated_at and .updated_at != .created_at then
       " update at \(.updated_at|elap)" else ""
