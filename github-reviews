@@ -100,6 +100,8 @@ def differ:
     csim(31)+.+csim
   elif startswith("@@") then
     csim(36)+.+csim
+  elif startswith("%") then
+    csim(33)+.+csim
   end
   ;
 def bodyer:
@@ -110,6 +112,12 @@ def bodyer:
 def expected($ty):
   if type != $ty then
     debug | error("unexpected input type \(type), expected a \($ty)")
+  end
+  ;
+def fold_too_long:
+  expected("array") |
+  if length > 50 then
+    .[20:length-20] |= ["% Folded \(length) lines"]
   end
   ;
 def elap:
@@ -179,7 +187,7 @@ reduce (inputs | expected("array"))[] as $review ({};
 | sort_by(.value[0].created_at | fromdate)[]
 |
 ( (.value[0].path | values | "", .)
-, (.key | select(bool(.)) | splits("\n") | "│ "+differ)
+, (.key | select(bool(.)) | [splits("\n")] | fold_too_long[] | "│ "+differ)
 , (.value[]
   | (if .updated_at and .updated_at != .created_at then
       " update at \(.updated_at|elap)" else ""
