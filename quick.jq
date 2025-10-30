@@ -90,6 +90,12 @@ def zip($b): zip(.; $b);
 def dbg: debug;
 def dbg(msg): debug(msg);
 def each(f): .[]|f;
+def counter:
+  reduce .[] as $i ({}; .[$i | @json] += 1)
+  | to_entries
+  | sort_by(-.value)
+  | from_entries
+  ;
 def fmt:
   def green: "\u001b[32m\(.)\u001b[0m";
   def blue: "\u001b[1;94m\(.)\u001b[0m";
