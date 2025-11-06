@@ -243,6 +243,7 @@ function short-git { # {{{
 				    $       :edit and eval bash command
 				    w       :change work directory
 				    o       :common operations
+				    O       :edit raw commit message
 				    f       :append extra short optional flag
 				branch commands:
 				    s       switch
@@ -473,6 +474,14 @@ function short-git { # {{{
                 qselect "${COMMON_OPERATIONS[@]}" &&
                     [ -n "${REPLY}" ] &&
                     git -c "$REPLY"
+                ;;
+
+            O)
+                editor=${VISUAL:-${EDITOR:-vim}}
+                hash -- "$editor" || exit
+                git -a show --format=format:%s%n%n%b --no-patch > "$git_root/.git/COMMIT_EDITMSG" &&
+                    "$editor" -- "$git_root/.git/COMMIT_EDITMSG" &&
+                    git -a commit --amend -F "$_"
                 ;;
 
             f)
