@@ -476,13 +476,7 @@ function short-git { # {{{
                     git -c "$REPLY"
                 ;;
 
-            O)
-                editor=${VISUAL:-${EDITOR:-vim}}
-                hash -- "$editor" || exit
-                git -a show --format=format:%s%n%n%b --no-patch > "$git_root/.git/COMMIT_EDITMSG" &&
-                    "$editor" -- "$git_root/.git/COMMIT_EDITMSG" &&
-                    git -a commit --amend -F "$_"
-                ;;
+            O) git -a commit --amend --cleanup=verbatim --no-status;;
 
             f)
                 local flag
