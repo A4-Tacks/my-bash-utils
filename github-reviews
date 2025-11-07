@@ -93,6 +93,7 @@ def csim(seq): [seq]|"\u001b[\(join(";"))m";
 def csim: csim(empty);
 def title: .[:1]+(.[1:]|ascii_downcase);
 def bool($x): $x | length | . != 0 and . != null;
+def rtrim: sub("\\s+$"; "");
 def differ:
   if startswith("+") then
     csim(32)+.+csim
@@ -178,7 +179,7 @@ reduce (inputs | expected("array"))[] as $review ({};
   .[$review.diff_hunk // $top] += [$review | {
     user: .user.login,
     body,
-    created_at: .created_at // .submitted_at,
+    created_at: (.created_at // .submitted_at),
     updated_at,
     html_url,
     author_association,
