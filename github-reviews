@@ -110,7 +110,7 @@ def bodyer:
   end
   ;
 def diff_title:
-  first(reverse[] | select(test("^.\\S.{3}"))[1:])
+  first(reverse[] | select(test("^.\\S.{3}"))[1:75])
   ;
 def expected($ty):
   if type != $ty then
