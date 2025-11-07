@@ -318,7 +318,7 @@ function short-git { # {{{
                 )
                 mapfile -td '' sorted_branches < <(
                     printf '%q\0' "${branches[@]}" | sort -zu |
-                        grep -vz "${exclude_branches[@]}"
+                        grep -vz "${exclude_branches[@]}" -e/HEAD
                 )
                 PS3="select checkout branch> "
                 qselect "${sorted_branches[@]}" && [ -n "$REPLY" ] &&
