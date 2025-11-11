@@ -121,7 +121,7 @@ def expected($ty):
 def patch_formatter:
   expected("array") |
   if length > 50 then
-    .[20:length-20] |= ["% Folded \(length) lines %\(" "+diff_title // "")"]
+    .[4:length-20] |= ["% Folded \(length) lines %\(" "+diff_title // "")"]
   elif length == 0 or . == [""] then
     ["% No patch provided"]
   end
