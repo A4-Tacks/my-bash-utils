@@ -18,9 +18,13 @@ json_options=(
 
 hash stty || exit
 
-info=$(stty -a || echo 80)
-cols=${info##*columns }
-cols=${cols%%;*}
+if test -t 1; then
+    info=$(stty -a || echo 80)
+    cols=${info##*columns }
+    cols=${cols%%;*}
+else
+    cols=999
+fi
 
 gh issue list "${json_options[@]}" "$@" |
 #< result \
@@ -74,5 +78,5 @@ state
   +(.number | fi($numlen))
   +(.labels | fi($lablen))
   +$L+"\(.meta|fi($metalen))"+$L+.title |
-.[:$col]
+short($col)
 '
