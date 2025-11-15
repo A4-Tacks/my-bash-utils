@@ -1,0 +1,93 @@
+#!/usr/bin/bash
+set -o nounset
+set -o errtrace
+#set -o pipefail
+function CATCH_ERROR { # {{{
+    local __LEC=$? __i __j
+    set +x
+    echo "Traceback (most recent call last):" >&2
+    for ((__i = ${#FUNCNAME[@]} - 1; __i >= 0; --__i)); do
+        printf '  File %q line %s in %q\n' >&2 \
+            "${BASH_SOURCE[__i]}" \
+            "${BASH_LINENO[__i]}" \
+            "${FUNCNAME[__i]}"
+        if ((BASH_LINENO[__i])) && [ -f "${BASH_SOURCE[__i]}" ]; then
+            for ((__j = 0; __j < BASH_LINENO[__i]; ++__j)); do
+                read -r REPLY
+            done < "${BASH_SOURCE[__i]}"
+            printf '    %s\n' "$REPLY" >&2
+        fi
+    done
+    echo "Error: [ExitCode: ${__LEC}]" >&2
+    exit "${__LEC}"
+}
+trap CATCH_ERROR ERR # }}}
+
+json_options=(
+    --json assignees
+    --json author
+    --json closedByPullRequestsReferences
+    --json comments
+    --json createdAt
+    --json labels
+    --json number
+    --json title
+    --json updatedAt
+    --json url
+)
+
+hash stty
+
+info=$(stty -a || echo 80)
+cols=${info##*columns }
+cols=${cols%%;*}
+
+gh issue list "${json_options[@]}" "$@" |
+#< result \
+    jq -r --argjson col "$cols" '
+"│ " as $L |
+def fi($n): tostring | .+" "*($n-length);
+def elap:
+  [
+    (now, fromdate)
+    | strftime("%s")
+    | tonumber
+  ]
+  | first-last
+  | [
+      ., (
+        ./60 | ., (
+          ./60 | ., (
+            ./24 | ., (
+              ./30.4375 | ., (
+                ./12)))))
+      | floor
+    ]
+  | [" seconds", "min", "h", "d", "mon", " years"] as $label
+  | last(to_entries[]
+    | [.value, $label[.key]]
+    | select(first > 1)
+    | join("")
+  )
+  ;
+def state:
+  if .closedByPullRequestsReferences | length != 0 then
+    "P"
+  elif .assignees | length != 0 then
+    "A"
+  else
+    " "
+  end
+  ;
+def say: .comments | length | "^"+@text | if .[1:] == "0" then "" end;
+.[] |= (.meta = (.createdAt | elap)+say) |
+(map(.number | @text | length+1) | max) as $numlen |
+(map(.labels | map(.name | length+1) | add) | max) as $lablen |
+(map(.meta | length) | max) as $metalen |
+.[] |
+state
+  +(.number | fi($numlen))
+  +([.labels[].name] | join(" ") | fi($lablen))
+  +$L+"\(.meta|fi($metalen)) "+$L+.title |
+.[:$col]
+'
