@@ -44,13 +44,14 @@ def elap:
                 ./12)))))
       | floor
     ]
-  | [" seconds", "min", "h", "d", "mon", " years"] as $label
+  | [" seconds", "min", "h", "d", "mon", "year"] as $label
   | last(to_entries[]
     | [.value, $label[.key]]
     | select(first > 1)
     | join("")
   )
   ;
+def short($n): if length > $n then .[:$n-3]+"..." end;
 def state:
   if .closedByPullRequestsReferences | length != 0 then
     "P"
@@ -61,14 +62,17 @@ def state:
   end
   ;
 def say: .comments | length | "^"+@text | if .[1:] == "0" then "" end;
-.[] |= (.meta = (.createdAt | elap)+say) |
-(map(.number | @text | length+1) | max) as $numlen |
-(map(.labels | map(.name | length+1) | add) | max) as $lablen |
-(map(.meta | length) | max) as $metalen |
+.[] |= (.number |= @text
+       |.labels |= (map(.name) | join(" ") | short(30))
+       |.meta = (.createdAt | elap)+say
+       ) |
+(map(.number | length+1) | max) as $numlen |
+(map(.labels | length+1) | max) as $lablen |
+(map(.meta | length+1) | max) as $metalen |
 .[] |
 state
   +(.number | fi($numlen))
-  +([.labels[].name] | join(" ") | fi($lablen))
-  +$L+"\(.meta|fi($metalen)) "+$L+.title |
+  +(.labels | fi($lablen))
+  +$L+"\(.meta|fi($metalen))"+$L+.title |
 .[:$col]
 '
