@@ -65,7 +65,11 @@ def state:
     " "
   end
   ;
-def say: .comments | length | "^"+@text | if .[1:] == "0" then "" end;
+def rcomments:
+  .author.login as $author |
+  .comments |
+  if length < 2 then map(select(.author.login != $author)) end;
+def say: rcomments | length | "^"+@text | if .[1:] == "0" then "" end;
 def counter(f): reduce f as $i ({}; .[$i] += 1);
 counter(.[].labels[].name) as $labels |
 .[] |= (.number |= @text
