@@ -144,7 +144,7 @@ function git { # {{{
         (a) prev_args="$(fmt_args "${@:OPTIND}")"; break;;
         *)
             ((--OPTIND <= 0)) && OPTIND=1
-            git=; ${git:?invalid args: ${!OPTIND@Q}};;
+            git=; ${git:?invalid args: ${!OPTIND@Q}}; exit 200;;
     esac done
 
     if [ -n "${edit-}" ]; then
@@ -175,7 +175,7 @@ function short-git { # {{{
         extra_args='' gitf_flags='' \
         prev_args='' edit='' \
         ls_opts=() ls_cmd cmd ref_pats use_c_refs used_c_refs \
-        lines p remote branch
+        lines p remote branch statpid
 
     if ! command -v git >/dev/null; then
         printf '%q: command git not found!\n' "${FUNCNAME[0]}" >&2
@@ -191,13 +191,20 @@ function short-git { # {{{
 	enter `h` or `?` show help
 	EOF
 
-    git -a status
+    ( # 可取消的 git status , 考虑到有些仓库执行 status 耗时过久
+        status_msg=$(command git -c color.status=always status) || exit
+        lines=$(wc -l <<< "$status_msg")
+        fill=${status_msg//[^$'\n']}$'\n'
+        printf '\e7%s\e[%dA\e[%dL\r%s\n\e8' "$fill" "$lines" "$lines" "$status_msg"
+    ) &
+    statpid=$!
 
     while
         p="short-git> ${extra_args:+(${extra_args@Q}) }"
         p+=${edit:+[+$edit] }
         read -rN1 -p"$p" ch
     do
+        kill $statpid 2>/dev/null; statpid=''
         [ "$ch" = $'\n' ] && printf ^M # \r会自动转成\n
         echo >&2
         case "${ch}" in
