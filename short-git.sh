@@ -193,7 +193,7 @@ function short-git { # {{{
 
     ( # 可取消的 git status , 考虑到有些仓库执行 status 耗时过久
         status_msg=$(command git -c color.status=always status) || exit
-        lines=$(wc -l <<< "$status_msg")
+        lines=$(wc -l <<< "$status_msg" 2>&-)
         fill=${status_msg//[^$'\n']}$'\n'
         printf '\e7%s\e[%dA\e[%dL\r%s\n\e8' "$fill" "$lines" "$lines" "$status_msg"
     ) &
