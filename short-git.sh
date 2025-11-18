@@ -195,7 +195,8 @@ function short-git { # {{{
         status_msg=$(command git -c color.status=always status) || exit
         lines=$(wc -l <<< "$status_msg" 2>&-)
         fill=${status_msg//[^$'\n']}$'\n'
-        printf '\e7%s\e[%dA\e[%dL\r%s\n\e8' "$fill" "$lines" "$lines" "$status_msg"
+        printf '\e7%s\e[%dA\e[%dL\r%s\n\e8\e[%dB' \
+            "$fill" "$lines" "$lines" "$status_msg" "$lines"
     ) &
     statpid=$!
 
