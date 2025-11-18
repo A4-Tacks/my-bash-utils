@@ -515,12 +515,8 @@ function short-git { # {{{
                 ref_pats=('refs/heads/*' 'refs/heads/*/**')
                 use_c_refs=1
                 ;;&
-            [rimMLtT$'\cW'])
-                ref_pats+=(
-                    "refs/tags/*" "refs/tags/*/**"
-                    "refs/remotes/*" "refs/remotes/*/**"
-                )
-                ;;&
+            [L]) ref_pats+=("refs/tags/*" "refs/tags/*/**");;&
+            [rimMLtT$'\cW']) ref_pats+=("refs/remotes/*" "refs/remotes/*/**");;&
             [rmM])
                 ref_pats+=(--no-merged HEAD)
                 ;;&
