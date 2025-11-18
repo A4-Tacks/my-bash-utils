@@ -201,17 +201,19 @@ function short-git { # {{{
             "$fill" "$lines" "$lines" "$status_msg" "$lines"
     ) &
     statpid=$!
+    # shellcheck disable=2064
+    trap "kill $statpid 2>/dev/null" exit
 
     while
         p="short-git> ${extra_args:+(${extra_args@Q}) }"
         p+=${edit:+[+$edit] }
         read -rN1 -p"$p" ch
     do
-        kill $statpid 2>/dev/null; statpid=''
+        kill $statpid 2>/dev/null; statpid=''; trap '' exit
         [ "$ch" = $'\n' ] && printf ^M # \r会自动转成\n
         echo >&2
         case "${ch}" in
-            [h?])
+            [h?]) # {{{
                 cat <<- EOF
 				short-git
 				simple commands:
@@ -267,7 +269,7 @@ function short-git { # {{{
 				    T       reset --hard
 				    ^W      whatchanged --graph --oneline
 				EOF
-                ;;
+                ;; # }}}
             H) git -a help;;
             $'\e') read -rt0.1;&
             [qQ$'\cd']) return 0;;
