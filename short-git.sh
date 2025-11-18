@@ -3,6 +3,8 @@ set -o nounset
 
 # This script references a portion of the git own bash completion script to obtain similar logic
 
+shopt -s extglob
+
 readonly CONST_REFS=(
     HEAD FETCH_HEAD ORIG_HEAD MERGE_HEAD REBASE_HEAD
     CHERRY_PICK_HEAD REVERT_HEAD BISECT_HEAD AUTO_MERGE
@@ -232,6 +234,7 @@ function short-git { # {{{
 				    k       checkout <remote-branch> --
 				    u       remote update
 				    S       show HEAD
+				    g       show <commit:try>
 				    a       add
 				    A       add -u
 				    E       add --edit
@@ -245,7 +248,6 @@ function short-git { # {{{
 				    space   :eval git
 				    :       :set extra args
 				    -       :append extra optional args
-				    g       :append extra commit hash
 				    .       :edit and running prev git command
 				    e       :edit and running next git command
 				    $       :edit and eval bash command
@@ -426,16 +428,10 @@ function short-git { # {{{
             -) read -erp 'extra args> ' \
                 -i "${extra_args:+$extra_args }-" extra_args;;
 
-            g)
-                mapfile -t lines < <(
-                    command git log --oneline | head -n $((LINES - 2))
-                )
-                PS3='extra args> '
-                qselect "${lines[@]}" &&
-                    [ -n "${REPLY}" ] &&
-                    printf -v extra_args "%s${extra_args:+ }%q" \
-                        "$extra_args" "${REPLY%% *}"
-                ;;
+            g)  prev_args='show '
+                until if read -erp '$ git show ' -i "${prev_args##show*( )}" prev_args
+                      then git -c show "$prev_args"
+                      fi do :;done;;
 
             .) read -erp 'edit args> ' \
                     -i "$prev_args" prev_args \
