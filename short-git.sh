@@ -99,6 +99,9 @@ function qselect { # {{{
             elif [[ $REPLY = , ]]; then
                 REPLY=$(git_prev)
                 return
+            elif [[ $REPLY = a ]]; then
+                REPLY=$1
+                return
             else
                 echo "Inavlid input ${REPLY@Q}, expect number"
             fi
