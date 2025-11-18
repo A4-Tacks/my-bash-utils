@@ -23,6 +23,7 @@ function CATCH_ERROR { # {{{
 }
 trap CATCH_ERROR ERR # }}}
 
+gh_opts=(--json url)
 req_opts=(
     --retry 4
     -H "Accept: application/vnd.github+json"
@@ -33,13 +34,14 @@ OPTIND=1
 while case "${!OPTIND---}" in
     -*?)false;;
     *)  args+=("${!OPTIND}"); ((++OPTIND)); continue
-esac || getopts ha opt; do case "$opt" in
+esac || getopts haR: opt; do case "$opt" in
     a)
         req_opts+=(-H "Authorization: Bearer ${GH_TOKEN:=$(
             hash grep tail
             grep -oP 'oauth_token: *\K.*' ~/.config/gh/hosts.yml | tail -n1
         )}")
         ;;
+    R) gh_opts+=(-R "$OPTARG");;
     h)
         printf 'Usage: %q [Options]\n' "${0##*/}"
         echo 'show github pull request reviews'
@@ -64,7 +66,7 @@ function fail { # {{{
 
 hash gh curl jq
 
-url=$(gh pr view --json url -- "$@" | jq -r .url || exit)
+url=$(gh pr view "${gh_opts[@]}" -- "$@" | jq -r .url || exit)
 [[ $url = */pull/* ]] || fail "$url"
 [[ $url = https://github.com/* ]] || fail "$url"
 content=${url#https://github.com/}
