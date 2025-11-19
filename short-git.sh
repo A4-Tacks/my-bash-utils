@@ -180,7 +180,7 @@ function short-git { # {{{
         extra_args='' gitf_flags='' \
         prev_args='' edit='' \
         ls_opts=() ls_cmd cmd ref_pats use_c_refs used_c_refs \
-        lines p prompt remote branch statpid
+        p prompt remote branch clean_stat
 
     if ! command -v git >/dev/null; then
         printf '%q: command git not found!\n' "${FUNCNAME[0]}" >&2
@@ -202,16 +202,20 @@ function short-git { # {{{
         status_msg=$(command git -c color.status=always status) || exit
         printf '\r\e[J%s\n%s' "$status_msg" "$prompt"
     ) &
-    statpid=$!
+    clean_stat="if hash pkill; then pkill -P $!; else kill $!; fi; wait $!"
     # shellcheck disable=2064
-    trap "kill $statpid 2>/dev/null" exit
+    trap "$clean_stat" exit
 
     while
         p="$prompt${extra_args:+(${extra_args@Q}) }"
         p+=${edit:+[+$edit] }
         read -rN1 -p"$p" ch
     do
-        kill $statpid 2>/dev/null; statpid=''; trap '' exit
+        if [ -n "$clean_stat" ]; then
+            trap '' exit
+            eval "$clean_stat"
+            clean_stat=''
+        fi
         [ "$ch" = $'\n' ] && printf ^M # \r会自动转成\n
         echo >&2
         case "${ch}" in
