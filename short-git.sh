@@ -176,7 +176,7 @@ function upstream { # {{{
 } # }}}
 
 function short-git { # {{{
-    local ch ref refs PS3 cmd_args cmd_args_post LEC git_root \
+    local ch ref refs PS3 cmd_args cmd_args_post LEC git_root git_dir \
         extra_args='' gitf_flags='' \
         prev_args='' edit='' \
         ls_opts=() ls_cmd cmd ref_pats use_c_refs used_c_refs \
@@ -188,7 +188,12 @@ function short-git { # {{{
     fi
 
     # abs path
-    git_root=$(git_root) || return
+    if [ -n "${GIT_DIR-}" ]; then
+        git_dir=$GIT_DIR
+    else
+        git_root=$(git_root) || return
+        git_dir=$git_root/.git
+    fi
 
 
 	cat <<- 'EOF'
@@ -554,7 +559,7 @@ function short-git { # {{{
                 used_c_refs=()
                 [ "${use_c_refs-}" = 1 ] &&
                     for ref in "${CONST_REFS[@]}"; do
-                        [ -e "$git_root/.git/$ref" ] && used_c_refs+=("$ref")
+                        [ -e "$git_dir/$ref" ] && used_c_refs+=("$ref")
                     done
                 if qselect "${used_c_refs[@]}" "${refs[@]%$'\n'}"; then
                     [ -z "${REPLY}" ] && continue 2
@@ -577,8 +582,9 @@ function short-git { # {{{
     done
 } # }}}
 
-while [ $# -ne 0 ]; do case "$1" in
-    -h | --help)
+OPTIND=1
+while getopts h-wn opt; do case "$opt" in
+    h|-)
         cat <<- EOF
 		short-git is a tool that utilizes short commands
 		to improve the efficiency of simple git operations.
@@ -587,17 +593,26 @@ while [ $# -ne 0 ]; do case "$1" in
 
 		OPTIONS:
 		    -w          use whiptail (TUI utils) select
+		    -n          for naked repo, set GIT_DIR=.
 		EOF
         exit;;
-    -w)
+    w)
         TUI_BIN=whiptail
         if ! hash "$TUI_BIN"; then
             echo "${TUI_BIN} not found" >&2
             exit 127
         fi
-        export NEWT_COLORS='root=,color8;actsellistbox=color15,;actlistbox=,color8'
-        shift;;
-    *) echo Error: unexpected arg: "${1@Q}" >&2; exit 2;;
+        export NEWT_COLORS='root=,color8;actsellistbox=color15,;actlistbox=,color8';;
+    n)  GIT_DIR=$(pwd);;
+    :|\?)
+        ((--OPTIND <= 0)) && OPTIND=1
+        printf '%q: parse args failed, near by %q\n' "$0" "${!OPTIND}" >&2
+        exit 2
 esac done
+set -- "${@:OPTIND}"
+if [ $# -ne 0 ]; then
+    printf '%q: unexpected arg %q\n' "$0" "$1" >&2
+    exit 2
+fi
 
 short-git
