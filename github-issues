@@ -73,7 +73,7 @@ def say: rcomments | length | "^"+@text | if .[1:] == "0" then "" end;
 def counter(f): reduce f as $i ({}; .[$i] += 1);
 counter(.[].labels[].name) as $labels |
 length as $len |
-.[].labels |= map(select($labels[.name] != $len)) |
+.[].labels |= map(select($len <= 1 or $labels[.name] != $len)) |
 .[] |= (.number |= @text
        |.labels |= (map(.name) | sort_by([-$labels[.], .]) | join(" ") | short(30))
        |.meta = (.createdAt | elap)+say
