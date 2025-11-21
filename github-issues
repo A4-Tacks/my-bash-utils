@@ -6,6 +6,7 @@ set -o pipefail
 json_options=(
     --json assignees
     --json author
+    --json closed
     --json closedByPullRequestsReferences
     --json comments
     --json createdAt
@@ -57,7 +58,9 @@ def elap:
   ;
 def short($n): if length > $n then .[:$n-3]+"..." end;
 def state:
-  if .closedByPullRequestsReferences | length != 0 then
+  if .closed then
+    "C"
+  elif .closedByPullRequestsReferences | length != 0 then
     "P"
   elif .assignees | length != 0 then
     "A"
