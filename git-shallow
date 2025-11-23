@@ -32,7 +32,8 @@ case "${1}" in
 esac
 
 git_root=$(git rev-parse --show-toplevel)
-full_id=$(git show --no-patch "$1" | awk '/^commit/{print$2}')
+rev=$(git name-rev --name-only -- "$1" || exit)
+full_id=$(git show --no-patch "$rev" | awk '/^commit/{print$2}' || exit)
 
 echo "${git_root@A}"
 echo "${full_id@A}"
