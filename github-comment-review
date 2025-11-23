@@ -76,7 +76,7 @@ capture("^\\s*
 ') || exit
 echo "${api@A}" >&2
 
-tmp=$(mktemp review-replies.XXXXXXXXXX)
+tmp=$(mktemp review-replies.XXXXXXXXXX.md)
 # shellcheck disable=2064
 trap "echo Aborted, replies-file: ${tmp@Q}" exit
 
