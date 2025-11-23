@@ -256,6 +256,7 @@ function short-git { # {{{
 				    ^A      restore --staged
 				    c       commit
 				    b       commit -anm TODO --no-gpg-sign --branch
+				    B       reset --soft HEAD^ && commit --amend
 				    C       switch -c
 				    W       whatchanged --graph --oneline
 				    space   :eval git
@@ -416,6 +417,7 @@ function short-git { # {{{
                 ;;
             c) git -c commit;;
             b) git -a commit -anm TODO --no-gpg-sign --branch;;
+            B) git -a reset --soft HEAD^ && git -a commit --amend --no-edit;;
             C)
                 local name
                 read -erp 'git switch -c ' name \
