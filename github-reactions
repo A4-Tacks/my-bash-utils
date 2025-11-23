@@ -112,5 +112,5 @@ def g($n): "\u001b[\($n)G";
 sort_by(.created_at | fromdate)[]
 | .created_at |= elap
 | .user |= .login
-| "\(.user+g(26)) at \(.created_at+g(38))"+$reactions[.content]+" ("+.content+")"
+| "\(.user+g(26)) at \(.created_at+g(39))"+$reactions[.content]+" ("+.content+")"
 '
