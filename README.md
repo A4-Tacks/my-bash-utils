@@ -1,5 +1,8 @@
 **LICENSE**: MIT
 
+test a
+     a
+
 Some personal bash scripts that may be useful.
 
 
@@ -9,6 +12,8 @@ Some Simple Sample
 short-git
 -------------------------------------------------------------------------------
 Perform simple git operations with fewer key interactions
+
+test b
 
 <details>
 <summary>Show Code</summary>
@@ -118,6 +123,8 @@ short-git> q
 
 </details>
 
+test c
+
 
 replline
 -------------------------------------------------------------------------------
@@ -125,6 +132,8 @@ Quickly and repeatedly execute certain commands, with independent history
 
 <details>
 <summary>Show Code</summary>
+
+test d
 
 ```
 $ replline -a jq -n
