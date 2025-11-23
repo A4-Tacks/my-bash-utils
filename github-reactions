@@ -1,0 +1,116 @@
+#!/usr/bin/bash
+set -o nounset
+set -o errtrace
+set -o pipefail
+function CATCH_ERROR { # {{{
+    local __LEC=$? __i __j
+    set +x
+    echo "Traceback (most recent call last):" >&2
+    for ((__i = ${#FUNCNAME[@]} - 1; __i >= 0; --__i)); do
+        printf '  File %q line %s in %q\n' >&2 \
+            "${BASH_SOURCE[__i]}" \
+            "${BASH_LINENO[__i]}" \
+            "${FUNCNAME[__i]}"
+        if ((BASH_LINENO[__i])) && [ -f "${BASH_SOURCE[__i]}" ]; then
+            for ((__j = 0; __j < BASH_LINENO[__i]; ++__j)); do
+                read -r REPLY
+            done < "${BASH_SOURCE[__i]}"
+            printf '    %s\n' "$REPLY" >&2
+        fi
+    done
+    echo "Error: [ExitCode: ${__LEC}]" >&2
+    exit "${__LEC}"
+}
+trap CATCH_ERROR ERR # }}}
+
+OPTIND=1
+while getopts h opt; do case "$opt" in
+    h)
+        printf 'Usage: %q [Options] <comment_url>\n' "${0##*/}"
+        echo
+        printf '%s\n' \
+            'Options:' \
+            '    -h                 show help' \
+            && exit
+        ;;
+    :|\?)
+        ((--OPTIND <= 0)) && OPTIND=1
+        printf '%q: parse args failed, near by %q\n' "$0" "${!OPTIND}" >&2
+        exit 2
+esac done
+set -- "${@:OPTIND}"
+
+if [ $# -eq 0 ]; then
+    printf '%q: expected a arg\n' "$0" >&2
+    exit 2
+fi
+if [ $# -ne 1 ]; then
+    printf '%q: unexpected arg %q\n' "$0" "$2" >&2
+    exit 2
+fi
+
+api=$(jq -Rrs <<< "$1" '
+sub("\\s*$"; "") |
+capture("^\\s*
+  (https?://)?github\\.com/
+  (?<owner>[^/]+)/
+  (?<repo>[^/]+)/
+  (pull|issues)/
+  (?<number>[^#/]+)
+  (
+      \\#(discussion_r|issuecomment-|pullrequestreview-)
+      (?<id>\\d+)
+  )?
+  \\s*$";
+"x") // error("Invalid comment url: \(@sh)")
+| ((select(.id) | "/comments") // "") as $com
+| "/repos/\(.owner)/\(.repo)/issues\($com)/\(.id // .number)/reactions"
+') || exit
+
+echo "${api@A}" >&2
+
+reactions=$(gh api --method GET \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "$api") || exit
+
+jq -r <<< "$reactions" '
+{
+  "+1":       "👍",
+  "-1":       "👎",
+  "laugh":    "😄",
+  "hooray":   "🎉",
+  "confused": "❓",
+  "heart":    "❤️",
+  "rocket":   "🚀",
+  "eyes":     "👀",
+} as $reactions |
+def elap:
+  [
+    (now, fromdate)
+    | strftime("%s")
+    | tonumber
+  ]
+  | first-last
+  | [
+      ., (
+        ./60 | ., (
+          ./60 | ., (
+            ./24 | ., (
+              ./30.4375 | ., (
+                ./12)))))
+      | floor
+    ]
+  | [" seconds", " minutes", "h", "d", " months", " years"] as $label
+  | last(to_entries[]
+    | [.value, $label[.key]]
+    | select(first > 1)
+    | join("")
+  )
+  ;
+def g($n): "\u001b[\($n)G";
+sort_by(.created_at | fromdate)[]
+| .created_at |= elap
+| .user |= .login
+| "\(.user+g(26)) at \(.created_at+g(38))"+$reactions[.content]+" ("+.content+")"
+'
