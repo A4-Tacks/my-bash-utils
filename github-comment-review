@@ -23,7 +23,7 @@ function CATCH_ERROR { # {{{
 }
 trap CATCH_ERROR ERR # }}}
 
-hash gh jq awk mktemp
+hash gh jq mktemp cat
 
 unset body body_file
 
@@ -89,6 +89,13 @@ fi
 body=$(<"$tmp")
 
 test -n "$body" # replies body by empty
+
+echo
+jq -Rr '"  "+.' <<< "$body"
+echo
+
+read -rp 'Submit comment?' || (echo;exit 1)
+[[ -n $REPLY && $REPLY != [Yy] ]] && (exit 1)
 
 gh api --method POST \
     -H "Accept: application/vnd.github+json" \
