@@ -19,6 +19,12 @@ json_options=(
 
 hash stty || exit
 
+function retry { # {{{
+    for _ in {1..5}; do
+        "$@" && return
+    done
+} # }}}
+
 if test -t 1; then
     info=$(stty -a || echo 80)
     cols=${info##*columns }
@@ -27,7 +33,7 @@ else
     cols=999
 fi
 
-gh issue list "${json_options[@]}" "$@" |
+retry gh issue list "${json_options[@]}" "$@" |
 #< result \
     jq -sRr --argjson col "$cols" '
 fromjson? // halt_error(1) |
