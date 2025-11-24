@@ -1,0 +1,44 @@
+#!/usr/bin/env -S /bin/jq -nsRrcf --args --
+
+"(?<tt>
+  (?<tree>
+    \\{
+      \\s* \\g<tt> \\s*
+      (?:
+        ,
+        \\s* (?:\\g<tt> \\s*)?
+      )*
+    \\}
+    |
+    \\{ \\s* \\}
+  )
+  |
+  [^\\s{,}]+ (?:\\s*\\g<tree>|\\s+as\\s+ [^\\s{,}]+)?
+)" as $group |
+
+def tree($parent):
+  scan($group; "xm") as [$prefix, $rest] |
+  $prefix | rtrimstr($rest) as $prefix |
+  if $rest then
+    $rest | sub("^\\{"; "") | sub("\\}$"; "") | tree($parent+$prefix)
+  elif $prefix == "self" then
+    $parent | sub("::$"; "")
+  else
+    $parent+$prefix
+  end
+  ;
+($ARGS.positional[] | if IN("-h", "--help") then
+  "Usage: flatten-use-trees [Options] ",
+  "Flatten rust use-trees",
+  "",
+  "Options:",
+  "     -h, --help      show this help"
+else
+  "unexpected arg: \(.)\n" | halt_error
+end) // ( inputs
+| splits(";")
+| sub("^\\s*pub\\s*"; ""; "m")
+| sub("^\\s*use\\s*"; ""; "m")
+| sub("\\s*;\\s*$"; ""; "m")
+| select(length > 0)
+| "use "+tree("")+";")
