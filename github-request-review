@@ -33,7 +33,7 @@ fi
 
 reviewer=${1?expected a reviewer arg}
 
-url=$(gh pr view --json url "${@:2}" || exit)
+url=$(gh pr view --json url "${@:2}" | jq -r .url || exit)
 number=${url##*/}
 api=/repos${url##*github.com}
 api=${api%pull/*?}pulls/$number/requested_reviewers
