@@ -426,7 +426,7 @@ function short-git { # {{{
                 unset name
                 ;;
             X)  git -a status &&
-                    read -rp "==> reset to HEAD^ ? [Y/n]" REPLY &&
+                    read -rp "==> reset --hard HEAD^ ? [Y/n]" REPLY &&
                     [[ -z $REPLY || $REPLY = [Yy] ]] && git -a reset --hard HEAD^
                 ;;
 
