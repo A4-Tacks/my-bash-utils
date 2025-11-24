@@ -34,7 +34,6 @@ fi
 reviewer=${1?expected a reviewer arg}
 
 url=$(gh pr view --json url "${@:2}" || exit)
-url=https://github.com/rust-lang/rust-analyzer/pull/20521
 number=${url##*/}
 api=/repos${url##*github.com}
 api=${api%pull/*?}pulls/$number/requested_reviewers
