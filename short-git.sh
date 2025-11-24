@@ -258,6 +258,7 @@ function short-git { # {{{
 				    b       commit -anm TODO --no-gpg-sign --branch
 				    B       reset --soft HEAD^ && commit --amend
 				    C       switch -c
+				    X       reset --hard HEAD^
 				    W       whatchanged --graph --oneline
 				    space   :eval git
 				    :       :set extra args
@@ -423,6 +424,10 @@ function short-git { # {{{
                 read -erp 'git switch -c ' name \
                     && git -a switch -c "$name"
                 unset name
+                ;;
+            X)  git -a status &&
+                    read -rp "==> reset to HEAD^ ? [Y/n]" REPLY &&
+                    [[ -z $REPLY || $REPLY = [Yy] ]] && git -a reset --hard HEAD^
                 ;;
 
             W)
