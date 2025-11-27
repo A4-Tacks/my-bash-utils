@@ -27,6 +27,7 @@ test $# = 1
 case "${1}" in
     -h|--help)
         printf 'Usage: %q <commit>\n' "${0##*/}"
+        echo "It may cause errors such as 'unshallow'. It is recommended to run 'git gc --no-prune'"
         exit 0
         ;;
 esac
