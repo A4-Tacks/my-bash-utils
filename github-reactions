@@ -78,13 +78,14 @@ capture("^\\s*
   (pull|issues)/
   (?<number>[^#/]+)
   (
-      \\#(discussion_r|issuecomment-|pullrequestreview-)
+      \\#(?<kind>discussion_r|issuecomment-|pullrequestreview-)
       (?<id>\\d+)
   )?
   \\s*$";
 "x") // error("Invalid comment url: \(@sh)")
 | ((select(.id) | "/comments") // "") as $com
-| "/repos/\(.owner)/\(.repo)/issues\($com)/\(.id // .number)/reactions"
+| ((select(.kind == "discussion_r") | "pulls") // "issues") as $kind
+| "/repos/\(.owner)/\(.repo)/\($kind+$com)/\(.id // .number)/reactions"
 ') || exit
 
 echo "${api@A}" >&2
