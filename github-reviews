@@ -25,7 +25,9 @@ trap CATCH_ERROR ERR # }}}
 
 gh_opts=(--json url)
 req_opts=(
+    --retry-all-errors
     --retry 4
+    --connect-timeout 15
     -H "Accept: application/vnd.github+json"
     -H "X-GitHub-Api-Version: 2022-11-28"
 )
