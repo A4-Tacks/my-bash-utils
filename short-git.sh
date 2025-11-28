@@ -461,29 +461,24 @@ function short-git { # {{{
 
             $) read -erp'$ ' cmd && eval "$cmd";;
             w)
-                echo 'r(git root) .(parent dir) space(custom) p(-)' >&2
+                echo 'r(git root) p(parent dir) space(custom) -(prev dir)' >&2
                 if read -rN1 -p'change to> '; then
                     echo >&2
                     case "$REPLY" in
                         r) REPLY=$git_root;;&
-                        .) REPLY=..;;&
+                        p) REPLY=..;;&
                         ' ')
                             read -erp'change to dir> '
                             LEC=$?
                             code $LEC
                             ;;&
-                        p) REPLY=-;;&
-                        ['r. p'])
-                            code && cd -- "$REPLY" > /dev/null \
-                                && command git status -s >/dev/null \
+                        -) REPLY=~-;;&
+                        ['rp -'])
+                            code && command git -C "$REPLY" status -s >/dev/null \
+                                && cd -- "$REPLY" > /dev/null \
                                 && pwd \
-                                || cd - \
-                                || return
-                            LEC=$?
-                            git_root=$(git_root) || return
-                            printf 'current pwd: %q\n' "$(pwd)"
-                            printf 'git root: %q\n' "${git_root}"
-                            code $LEC
+                                && git_root=$(git_root) \
+                                && printf 'git root: %q\n' "${git_root}"
                             ;;
                         *)
                             echo "Unknown cd target: ${REPLY@Q}" >&2
