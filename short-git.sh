@@ -257,6 +257,7 @@ function short-git { # {{{
 				    c       commit
 				    b       commit -anm TODO --no-gpg-sign --branch
 				    B       reset --soft HEAD^ && commit --amend
+				    ^B      :squash like HEAD and HEAD^
 				    C       switch -c
 				    X       reset --hard HEAD^
 				    W       whatchanged --graph --oneline
@@ -419,6 +420,15 @@ function short-git { # {{{
             c) git -c commit;;
             b) git -a commit -anm TODO --no-gpg-sign --branch;;
             B) git -a reset --soft HEAD^ && git -a commit --amend --no-edit;;
+            $'\cB')
+                ref=$(command git show --format=format:%H --no-patch) &&
+                    git -a reset --soft HEAD^ &&
+                    git -a commit --amend --edit --cleanup=verbatim --no-status -F <(
+                        command git show --no-patch --format=format:%B "$ref"
+                        echo $'\n============== Squash Split =============\n'
+                        command git show --no-patch --format=format:%B HEAD
+                    )
+                ;;
             C)
                 local name
                 read -erp 'git switch -c ' name \
