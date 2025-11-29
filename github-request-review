@@ -52,4 +52,4 @@ gh api --method $method \
     -H "X-GitHub-Api-Version: 2022-11-28" \
     "$api" \
     --input <(jq -R '{reviewers:[.]}' <<< "$reviewer") |
-    jq -r '["Reviewers:", "• "+.requested_reviewers[].login]?[]' || exit
+    jq -r '["Reviewers:", "• "+.requested_reviewers[].login]? |.[]' || exit
