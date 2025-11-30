@@ -1,4 +1,10 @@
 #!/bin/bash
+
+if [ -t 0 ]; then
+    printf '%q: Do not input from terminal!\n' "${0##*/}" >&2
+    exit 210
+fi
+
 awk '{
     match($0, /^(\x1b\[([0-9]+|;)*m|[ |/\\*_])+/);
     t=substr($0, 1, RLENGTH);
