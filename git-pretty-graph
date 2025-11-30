@@ -1,0 +1,10 @@
+#!/bin/bash
+awk '{
+    match($0, /^(\x1b\[([0-9]+|;)*m|[ |/\\*_])+/);
+    t=substr($0, 1, RLENGTH);
+    gsub(/\//, "╱", t)
+    gsub(/\\/, "╲", t)
+    gsub(/\*/, "○", t)
+    gsub(/\|/, "│", t)
+    print t substr($0, RLENGTH+1);
+}' | less -FRXS
