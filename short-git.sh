@@ -167,26 +167,6 @@ function git { # {{{
     eval "command git $prev_args$bound"
 } # }}}
 
-function log-graph { # {{{
-    if [ -z "${SHORT_GIT_PRETTY-}" ]; then
-        git -a log --oneline --graph "$@"
-    else
-        git -a log --oneline --graph "$@" --color=always --decorate=short |
-            awk '{
-                match($0, /^(\x1b\[([0-9]+|;)*m|[ |/\\*_])+/);
-                t=substr($0, 1, RLENGTH);
-                gsub(/\//, "╱", t)
-                gsub(/\\/, "╲", t)
-                gsub(/\*/, "○", t)
-                gsub(/\|/, "│", t)
-                print t substr($0, RLENGTH+1);
-            }' |
-            less -FRXS
-
-        return "${PIPESTATUS[0]}"
-    fi
-} # }}}
-
 function git_root { # {{{
     command git rev-parse --show-toplevel
 } # }}}
@@ -310,8 +290,8 @@ function short-git { # {{{
             [$'\r\n;']) git -a status;;
             ,) git -a switch -;;
             d) git -a diff;;
-            l) log-graph --all;;
-            $'\cL') log-graph;;
+            l) git -a log --oneline --graph --all;;
+            $'\cL') git -a log --oneline --graph;;
             p) git -a push;;
             $'\cY')
                 if ref=$(upstream); then
@@ -615,18 +595,17 @@ function short-git { # {{{
 } # }}}
 
 OPTIND=1
-while getopts h-wnp opt; do case "$opt" in
+while getopts h-wn opt; do case "$opt" in
     h|-)
         cat <<- EOF
 		short-git is a tool that utilizes short commands
 		to improve the efficiency of simple git operations.
 
-		USAGE: ${0##*/} [OPTIONS] [-h | --help]
+		USAGE: ${0##*/} [-w] [-h | --help]
 
 		OPTIONS:
 		    -w          use whiptail (TUI utils) select
 		    -n          for naked repo, set GIT_DIR=.
-		    -p          some pretty improve
 		EOF
         exit;;
     w)
@@ -637,7 +616,6 @@ while getopts h-wnp opt; do case "$opt" in
         fi
         export NEWT_COLORS='root=,color8;actsellistbox=color15,;actlistbox=,color8';;
     n)  GIT_DIR=$(pwd);;
-    p)  SHORT_GIT_PRETTY=1;;
     :|\?)
         ((--OPTIND <= 0)) && OPTIND=1
         printf '%q: parse args failed, near by %q\n' "$0" "${!OPTIND}" >&2
