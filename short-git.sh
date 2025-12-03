@@ -139,14 +139,15 @@ function qselect { # {{{
 } # }}}
 
 function git { # {{{
-    local arg opt bound=''
+    local arg opt bound='' preconf=''
 
     unset prev_args
     OPTIND=1
-    while getopts abc opt; do case "$opt" in
+    while getopts abcg: opt; do case "$opt" in
         (b) bound=' --';;
         (c) prev_args="${*:OPTIND}"; break;;
         (a) prev_args="$(fmt_args "${@:OPTIND}")"; break;;
+        (g) preconf+="-c ${OPTARG@Q} ";;
         *)
             ((--OPTIND <= 0)) && OPTIND=1
             git=; ${git:?invalid args: ${!OPTIND@Q}}; exit 200;;
@@ -163,8 +164,8 @@ function git { # {{{
 
     printf '==> %s\n' "$prev_args" >&2
 
-    history -s -- "$prev_args"
-    eval "command git $prev_args$bound"
+    history -s -- "$preconf$prev_args"
+    eval "command git $preconf$prev_args$bound"
 } # }}}
 
 function git_root { # {{{
@@ -419,16 +420,14 @@ function short-git { # {{{
                 ;;
             c) git -c commit;;
             b) git -a commit -anm TODO --no-gpg-sign --branch;;
-            B) git -a reset --soft HEAD^ && git -a commit --amend --no-edit;;
-            $'\cB')
-                ref=$(command git show --format=format:%H --no-patch) &&
-                    git -a reset --soft HEAD^ &&
-                    git -a commit --amend --edit --cleanup=verbatim --no-status -F <(
-                        command git show --no-patch --format=format:%B "$ref"
-                        echo $'\n============== Squash Split =============\n'
-                        command git show --no-patch --format=format:%B HEAD
-                    )
-                ;;
+            B) git -g sequence.editor='sed -i 2s/^pick/fixup/' \
+                   -g advice.waitingForEditor=false \
+                   -c rebase -i HEAD^^;;
+            $'\cB') git -g sequence.editor='sed -i 2s/^pick/squash/' \
+                        -g advice.waitingForEditor=false \
+                        -g commit.cleanup=verbatim \
+                        -g commit.status=false \
+                        -c rebase -i HEAD^^;;
             C)
                 local name
                 read -erp 'git switch -c ' name \
