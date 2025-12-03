@@ -4,6 +4,10 @@ set -o nounset
 # This script references a portion of the git own bash completion script to obtain similar logic
 
 shopt -s extglob
+shopt -s checkwinsize
+
+echo -n | cat # init winsize
+export COLUMNS="$COLUMNS"
 
 readonly CONST_REFS=(
     HEAD FETCH_HEAD ORIG_HEAD MERGE_HEAD REBASE_HEAD
