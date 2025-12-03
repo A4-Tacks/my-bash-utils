@@ -105,7 +105,7 @@ fi
 
 run sed -i "/^default-run/c default-run = \"$name\"" Cargo.toml
 
-test -n "$rename_to" && run mv -- "$f" "$bin/${rename_to%.rs}.rs"
+test -n "$rename_to" && run mv -vi -- "$f" "$bin/${rename_to%.rs}.rs"
 test -e "$f" || echo "$default" > "$f"
 
 run "$editor" "$f"
