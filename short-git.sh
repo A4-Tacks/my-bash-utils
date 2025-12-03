@@ -548,6 +548,10 @@ function short-git { # {{{
             [rmM])
                 ref_pats+=(--no-merged HEAD)
                 ;;&
+            [smMtT])
+                ref=$(command git branch --show-current)
+                [ -n "$ref" ] && ref_pats+=(--exclude refs/heads/"$ref")
+                ;;&
             [sDrimM]) use_c_refs=0;;&
             [tTL$'\cW']) gitf_flags+=b;;&
             s) cmd_args=(switch);;&
