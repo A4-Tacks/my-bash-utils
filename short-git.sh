@@ -349,7 +349,7 @@ function short-git { # {{{
                 )
                 PS3="select checkout branch> "
                 qselect "${sorted_branches[@]}" && [ -n "$REPLY" ] &&
-                    git -a checkout --track "$REPLY" --
+                    git -a switch --track "$REPLY" --
                 unset branches sorted_branches exclude_branches
                 ;;
             A) git -a add -vu | sed 's/^/    /';;
