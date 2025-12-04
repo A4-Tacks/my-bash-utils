@@ -6,6 +6,25 @@ Some personal bash scripts that may be useful.
 Some Simple Sample
 ===============================================================================
 
+github scripts
+-------------------------------------------------------------------------------
+As a supplement to github-cli
+
+- github-comment-review: Add a reply comment for review comments url
+- github-issues: Similar `gh issue list`, but cleanly labels, pullRef/assign and show comments count
+- github-reactions: Show user names of reactions, and send a new reactions
+- github-request-review: Request reviewer
+- github-reviews: Show comments, reviews and review comments
+
+
+git scripts
+-------------------------------------------------------------------------------
+- git-shallow: Quickly add a grafted commit (which may disrupt the unshallow)
+- git-fc: Using a short reference to fetch a local commit
+- git-showtool: A `git difftool commit^ commit` wrapper
+- git-pretty-graph: git log pager, improve graph lines
+
+
 short-git
 -------------------------------------------------------------------------------
 Perform simple git operations with fewer key interactions
