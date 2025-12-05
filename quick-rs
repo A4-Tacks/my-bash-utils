@@ -37,13 +37,15 @@ shopt -s nullglob
 clean=''
 rename_to=''
 default='fn main() {}'
+proj=~/Project/Rust/quick-rs
+bin=$proj/src/bin
 
 args=()
 OPTIND=1
 while case "${!OPTIND---}" in
     -*?)false;;
     *)  args+=("${!OPTIND}"); ((++OPTIND)); continue
-esac || getopts hpr:cd: opt; do case "$opt" in
+esac || getopts hpr:cd:l opt; do case "$opt" in
     h)
         printf 'Usage: %q [Options] name\n' "${0##*/}"
         echo 'Quick edit .rs single file'
@@ -54,12 +56,14 @@ esac || getopts hpr:cd: opt; do case "$opt" in
             '    -r <name>          rename to name, and edit new file' \
             '    -c                 clean default files and target' \
             '    -d <default>       set default src' \
+            '    -l                 list files' \
             '    -h                 show help' \
             && exit
         ;;
     c) clean=1;;
     r) rename_to=$OPTARG;;
     d) default=$OPTARG;;
+    l) ls -- "$bin"; exit;;
     p)
         hash cargo realpath sed rm mkdir
         run cargo new quick-rs
@@ -87,8 +91,6 @@ hash sed "$editor" mv
 
 name=${1:-main}
 
-proj=~/Project/Rust/quick-rs
-bin=$proj/src/bin
 f=$bin/$name.rs
 
 run cd -- "$proj" || exit
