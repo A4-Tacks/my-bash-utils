@@ -93,7 +93,7 @@ function qselect { # {{{
     fi # }}}
     if [ $# -ge ${#SELECT_KEY_LIST[*]} ]; then # Normal mode {{{
         select ch in "$@"; do
-            if [[ $REPLY =~ ^[0-9]+$ ]]; then
+            if [[ $REPLY =~ ^[0-9]+$ ]] && ((REPLY <= $#)); then
                 if [ "${REPLY}" = 0 ]; then
                     REPLY=''
                     return
