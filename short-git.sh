@@ -548,7 +548,7 @@ function short-git { # {{{
             [rmM])
                 ref_pats+=(--no-merged HEAD)
                 ;;&
-            [smMtT])
+            [smMtTDr])
                 ref=$(command git branch --show-current)
                 [ -n "$ref" ] && ref_pats+=(--exclude refs/heads/"$ref")
                 ;;&
