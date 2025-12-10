@@ -19,12 +19,15 @@ readonly COMMON_OPERATIONS=( # {{{
     'reflog'
     'diff --staged'
     'commit --amend'
-    'log --stat --dirstat --graph --all'
-    'log --show-signature --graph --all'
+    'log-graph --stat --dirstat'
+    'log-graph --show-signature'
     'am --'{continue,abort,skip,quit}
     'merge --'{continue,abort,quit}
     'clean -i'
 ) # }}}
+readonly GIT_PRESET=(
+    -c alias.log-graph='-c log.showRoot=false log --graph --all'
+)
 
 function code { # {{{
     return "${1:-$?}"
@@ -169,7 +172,7 @@ function git { # {{{
     printf '==> %s\n' "$prev_args" >&2
 
     history -s -- "$preconf$prev_args"
-    eval "command git $preconf$prev_args$bound"
+    eval "command git ${GIT_PRESET[*]@Q} $preconf$prev_args$bound"
 } # }}}
 
 function git_root { # {{{
