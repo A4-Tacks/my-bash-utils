@@ -546,12 +546,12 @@ function short-git { # {{{
                 ref_pats=('refs/heads/*' 'refs/heads/*/**')
                 use_c_refs=1
                 ;;&
-            [L]) ref_pats+=("refs/tags/*" "refs/tags/*/**");;&
-            [rimMLtT$'\cW']) ref_pats+=("refs/remotes/*" "refs/remotes/*/**");;&
+            #[L]) ref_pats+=("refs/tags/*" "refs/tags/*/**");;&
+            [rimMtT$'\cW']) ref_pats+=("refs/remotes/*" "refs/remotes/*/**");;&
             [rmM])
                 ref_pats+=(--no-merged HEAD)
                 ;;&
-            [smMtTDr])
+            [smMLtTDr])
                 ref=$(command git branch --show-current)
                 [ -n "$ref" ] && ref_pats+=(--exclude refs/heads/"$ref")
                 ;;&
