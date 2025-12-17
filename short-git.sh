@@ -267,6 +267,7 @@ function short-git { # {{{
 				    B       reset --soft HEAD^ && commit --amend
 				    ^B      :squash like HEAD and HEAD^
 				    C       switch -c
+				    N       branch --move
 				    X       reset --hard HEAD^
 				    W       whatchanged --graph --oneline
 				    space   :eval git
@@ -435,12 +436,8 @@ function short-git { # {{{
                         -g commit.cleanup=verbatim \
                         -g commit.status=false \
                         -c rebase -i HEAD^^;;
-            C)
-                local name
-                read -erp 'git switch -c ' name \
-                    && git -a switch -c "$name"
-                unset name
-                ;;
+            C)  read -erp 'git switch -c ' ref && git -a switch -c "$ref";;
+            N)  read -erp 'git branch -m ' ref && git -a branch -m "$ref";;
             X)  git -a status &&
                     read -rp "==> reset --hard HEAD^ ? [Y/n]" REPLY &&
                     [[ -z $REPLY || $REPLY = [Yy] ]] && git -a reset --hard HEAD^
