@@ -45,7 +45,7 @@ OPTIND=1
 while case "${!OPTIND---}" in
     -*?)false;;
     *)  args+=("${!OPTIND}"); ((++OPTIND)); continue
-esac || getopts hpr:cd:l opt; do case "$opt" in
+esac || getopts hHpr:cd:l opt; do case "$opt" in
     h)
         printf 'Usage: %q [Options] name\n' "${0##*/}"
         echo 'Quick edit .rs single file'
@@ -58,8 +58,17 @@ esac || getopts hpr:cd:l opt; do case "$opt" in
             '    -d <default>       set default src' \
             '    -l                 list files' \
             '    -h                 show help' \
+            '    -H                 show bash complete script' \
             && exit
         ;;
+    H)  cat << "EOF"
+function _comp_quick-rs { # {{{
+    local cur prev words cword
+    _comp_initialize -s -- "$@" || return
+    _comp_compgen -- -W "$(quick-rs -l | sed 's/\.rs$//')" "$cur"
+} && complete -F _comp_quick-rs quick-rs # }}}
+EOF
+        exit;;
     c) clean=1;;
     r) rename_to=$OPTARG;;
     d) default=$OPTARG;;
