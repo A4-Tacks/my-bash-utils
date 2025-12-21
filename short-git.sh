@@ -299,7 +299,7 @@ function short-git { # {{{
             [$'\r\n;']) git -a status;;
             ,) git -a switch -;;
             d) git -a diff;;
-            l) git -a log --oneline --graph --all;;
+            l) git -a log --oneline --graph --all || true;;
             $'\cL') git -a log --oneline --graph;;
             p) git -a push;;
             $'\cY')
