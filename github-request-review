@@ -31,15 +31,8 @@ if [[ $# = 1 && $1 = -h ]]; then
     exit
 fi
 
-req_opts=(--json url)
-
-if [ -t 0 ] && [ -t 2 ] && [ -z "${1-}" ]; then
-    req_opts+=(--json reviews)
-else
-    reviewer=${1?required a reviewer arg}
-fi
 method=POST
-shift || :
+req_opts=(--json url)
 
 args=()
 for arg; do case "$arg" in
@@ -47,20 +40,36 @@ for arg; do case "$arg" in
     *) args+=("$arg");;
 esac done
 
+reviewer=${args[0]-}
+args=("${args[@]:1}")
+
+if [ -t 0 ] && [ -t 2 ] && [ -z "$reviewer" ]; then
+    case "$method" in
+        DELETE) req_opts+=(--json reviewRequests);;
+        *) req_opts+=(--json reviews);;
+    esac
+else
+    reviewer=${reviewer:?}
+fi
+
 meta=$(gh pr view "${req_opts[@]}" "${args[@]}" |
-    jq -r '.url, ([.reviews[]?.author.login] | unique[])' || exit)
+    jq -r '.url, ([.. | objects.login | values] | unique[])' || exit)
 mapfile -t meta <<< "$meta"
 
 url=${meta[0]}
 number=${url##*/}
 api=/repos${url##*github.com}
 api=${api%pull/*?}pulls/$number/requested_reviewers
+
+echo "${method@A}" >&2
 echo "${api@A}" >&2
 
 PS3="request reviewer> "; select reviewer in "${meta[@]:1}"; do
     [ -n "$reviewer" ] && break
     echo 'Invalid reviewer' >&2
 done || exit
+
+test -n "$reviewer"
 
 gh api --method $method \
     -H "Accept: application/vnd.github+json" \
