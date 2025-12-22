@@ -39,7 +39,7 @@ else
     reviewer=${1?required a reviewer arg}
 fi
 method=POST
-shift
+shift || :
 
 args=()
 for arg; do case "$arg" in
