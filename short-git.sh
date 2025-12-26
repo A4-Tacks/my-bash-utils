@@ -188,7 +188,7 @@ function short-git { # {{{
         extra_args='' gitf_flags='' \
         prev_args='' edit='' \
         ls_opts=() ls_cmd cmd ref_pats use_c_refs used_c_refs \
-        p prompt remote branch clean_stat
+        p prompt remote branch
 
     if ! command -v git >/dev/null; then
         printf '%q: command git not found!\n' "${FUNCNAME[0]}" >&2
@@ -209,28 +209,14 @@ function short-git { # {{{
 	enter `h` or `?` show help
 	EOF
 
-    prompt='short-git> '
-
-    ( # 可取消的 git status , 考虑到有些仓库执行 status 耗时过久
-        status_msg=$(command git -c color.status=always status) || exit
-        printf '\r\e[J%s\n%s' "$status_msg" "$prompt"
-    ) &
-    clean_stat="if hash pkill; then pkill -P $!; else kill $!; fi; wait $!"
-    # shellcheck disable=2064
-    trap "$clean_stat" exit
-
     while
-        p="$prompt${extra_args:+(${extra_args@Q}) }"
+        prompt=$(command git branch --show-current)
+        p="* ${prompt:-?}> ${extra_args:+(${extra_args@Q}) }"
         p+=${edit:+[+$edit] }
         read -rN1 -p"$p" ch
     do
-        if [ -n "$clean_stat" ]; then
-            trap '' exit
-            eval "$clean_stat"
-            clean_stat=''
-        fi
-        [ "$ch" = $'\n' ] && printf ^M # \r会自动转成\n
-        echo >&2
+        [ "$ch" = $'\n' ] || echo >&2
+        printf '\r'
         case "${ch}" in
             [h?]) # {{{
                 cat <<- EOF
