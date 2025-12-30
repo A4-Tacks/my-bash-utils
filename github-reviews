@@ -166,7 +166,12 @@ def association:
   end;
 def state:
   .state | if . then
-    " "+ascii_downcase
+    " "+(ascii_downcase
+      | if endswith("requested") then
+        csim(31)+.+csim(39)
+      elif endswith("approved") then
+        csim(32)+.+csim(39)
+      end)
   else
     ""
   end
