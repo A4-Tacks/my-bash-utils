@@ -96,9 +96,9 @@ capture("^\\s*
 
 if [ -n "$mode" ]; then
     PS3="select emoji> "
-    eval "$(jq -nr "$emoji"'|to_entries|map("\(.value) (\(.key))"|@sh)|
-    "select _ in \(join(" ")); do case $REPLY in",
-    "    \(keys_unsorted|to_entries[]|"(\(.key+1)) NR=$REPLY; REPLY=\(.value|@sh); break;;")",
+    eval "$(jq -nr "$emoji"'|to_entries|
+    "select _ in \(map("\(.value) (\(.key))"|@sh)|join(" ")); do case $REPLY in",
+    "    \(to_entries[]|"(\(.key+1)) NR=$REPLY; REPLY=\(.value.key|@sh); break;;")",
     "    (*) echo Invalid REPLY;;",
     "esac done"')" || exit
 
