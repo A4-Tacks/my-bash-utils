@@ -8,6 +8,7 @@ shopt -s checkwinsize
 
 echo -n | cat # init winsize
 export COLUMNS="$COLUMNS"
+supports_each_ref_exclude=$(! git for-each-ref "" --exclude x 2>&-; echo $?)
 
 readonly CONST_REFS=(
     HEAD FETCH_HEAD ORIG_HEAD MERGE_HEAD REBASE_HEAD
@@ -536,7 +537,9 @@ function short-git { # {{{
                 ;;&
             [smMLtTDr])
                 ref=$(command git branch --show-current)
-                [ -n "$ref" ] && ref_pats+=(--exclude refs/heads/"$ref")
+                [ -n "$ref" ] &&
+                    [ "$supports_each_ref_exclude" = 1 ] &&
+                    ref_pats+=(--exclude refs/heads/"$ref")
                 ;;&
             [sDrimM]) use_c_refs=0;;&
             [tTL$'\cW']) gitf_flags+=b;;&
