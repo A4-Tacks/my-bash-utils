@@ -45,5 +45,6 @@ ref=$(git show --format='%H' --no-patch "${1:?expected a git ref}" || exit)
 upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}')
 set -- "${opts[@]}" "${@:3}"
 
+trap '' ERR
 set -x
 git fetch "${upstream%%/*}" "$ref" --depth="$depth" "$@"
