@@ -247,6 +247,7 @@ function short-git { # {{{
 				    A       add -u
 				    E       add --edit
 				    ^E      add --patch
+				    ^T      reset --patch HEAD^ && commit --amend
 				    R       restore
 				    ^A      restore --staged
 				    c       commit
@@ -350,6 +351,7 @@ function short-git { # {{{
             A) git -a add -vu | sed 's/^/    /';;
             E) git -a add --edit;;
             $'\cE') git -a add --patch;;
+            $'\cT') git -a reset --patch HEAD^ && git -a commit --amend --no-edit;;
             $'\cA')
                 local staged_files
                 mapfile -td '' staged_files < <(
