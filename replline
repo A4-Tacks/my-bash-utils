@@ -74,11 +74,7 @@ do
     prev=$REPLY
     input=$prelude$REPLY
 
-    if [ -v input ]; then
-        run "$@" <<< "$input"
-    else
-        run "$@"
-    fi
+    run "$@"
     exitcode=$?
     [ $exitcode -ne 0 ] && echo $'\n'"exit code: $exitcode" >&2
     [ -n "$empty_newline" ] && REPLY=''
