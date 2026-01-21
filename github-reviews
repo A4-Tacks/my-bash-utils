@@ -114,19 +114,22 @@ def bodyer(lines):
   foreach lines as $line ({code:false};
     .cur = ($line | test("^ *```[^`]*$")) | if .cur then .code |= not end;
     if .code or .cur then
-      csim(2,48,5,236)+"\u001b[K"+$line+csim(49,22)
+      [csim(2,48,5,236)+"\u001b[K"+$line+csim(49,22)]
     elif $line | startswith("> ") or .==">" then
-      csim(38,5,251)+"│ "+$line[2:]+csim+"\u001b[K"
+      [csim(38,5,251)+"│ "+$line[2:]+csim, true]
     else
-      $line+"\u001b[K"
+      [$line, true]
     end
-  )
-  # markdown inline
-  | gsub("(?<x>(?<!\\*)\\*[^* ](\\\\|[^`])*?(?<![* ])\\*)"; csim(3)+.x+csim(23))
-  | gsub("(?<x>(?<!\\*)\\*\\*[^* ](\\\\|[^`])*?(?<![* ])\\*\\*)"; csim(1)+.x+csim(22))
-  | gsub("(?<x>(?<!\\*)\\*\\*\\*[^* ](\\\\|[^`])*?(?<![* ])\\*\\*\\*)"; csim(1,3)+.x+csim(23,22))
-  | gsub("(?<x>(?<!~)~~[^~ ](\\\\|[^`])*?(?<![~ ])~~)"; csim(9)+.x+csim(29))
-  | gsub("(?<!`)(?<q>`+)(?<x>( *)[^ `](?:(?!\\3\\1).)*\\3)\\1"; csim(2,8,48,5,236)+.q+csim(28)+(.x|clean_csi)+csim(8)+.q+csim(28,49,22))
+  ) | . as [$line, $render] | $line |
+  if $render then
+    # markdown inline
+    . + "\u001b[K"
+    | gsub("(?<x>(?<!\\*)\\*[^* ](\\\\|[^`])*?(?<![* ])\\*)"; csim(3)+.x+csim(23))
+    | gsub("(?<x>(?<!\\*)\\*\\*[^* ](\\\\|[^`])*?(?<![* ])\\*\\*)"; csim(1)+.x+csim(22))
+    | gsub("(?<x>(?<!\\*)\\*\\*\\*[^* ](\\\\|[^`])*?(?<![* ])\\*\\*\\*)"; csim(1,3)+.x+csim(23,22))
+    | gsub("(?<x>(?<!~)~~[^~ ](\\\\|[^`])*?(?<![~ ])~~)"; csim(9)+.x+csim(29))
+    | gsub("(?<!`)(?<q>`+)(?<x>( *)[^ `](?:(?!\\3\\1).)*\\3)\\1"; csim(2,8,48,5,236)+.q+csim(28)+(.x|clean_csi)+csim(8)+.q+csim(28,49,22))
+  end
   ;
 def diff_title:
   first(reverse[] | select(test("^.\\S.{3}"))[1:75])
