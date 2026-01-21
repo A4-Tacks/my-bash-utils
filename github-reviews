@@ -98,6 +98,7 @@ def csim: csim(empty);
 def title: .[:1]+(.[1:]|ascii_downcase);
 def bool($x): $x | length | . != 0 and . != null;
 def rtrim: sub("\\s+$"; "");
+def clean_csi: gsub("\u001b\\[(\\d+(;\\d+)*)m"; "");
 def differ:
   if startswith("+") then
     csim(32)+.+csim
@@ -113,6 +114,12 @@ def bodyer:
   if startswith("> ") then
     csim(38,5,251)+"│ "+.[2:]+csim
   end
+  # markdown inline
+  | gsub("(?<x>(?<!\\*)\\*[^* ](\\\\|[^`])*?(?<![* ])\\*)"; csim(3)+.x+csim(23))
+  | gsub("(?<x>(?<!\\*)\\*\\*[^* ](\\\\|[^`])*?(?<![* ])\\*\\*)"; csim(1)+.x+csim(22))
+  | gsub("(?<x>(?<!\\*)\\*\\*\\*[^* ](\\\\|[^`])*?(?<![* ])\\*\\*\\*)"; csim(1,3)+.x+csim(23,22))
+  | gsub("(?<x>(?<!~)~~[^~ ](\\\\|[^`])*?(?<![~ ])~~)"; csim(9)+.x+csim(29))
+  | gsub("(?<!`)(?<q>`+)(?<x>( *)[^ `](?:(?!\\3\\1).)*\\3)\\1"; csim(2,8,48,5,236)+.q+csim(28)+(.x|clean_csi)+csim(8)+.q+csim(28,49,22))
   ;
 def diff_title:
   first(reverse[] | select(test("^.\\S.{3}"))[1:75])
