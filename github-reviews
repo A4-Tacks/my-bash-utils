@@ -74,9 +74,9 @@ url=$(gh pr view "${gh_opts[@]}" -- "$@" | jq -r .url || exit)
 content=${url#https://github.com/}
 id=${content##*/}
 repo=${content%/pull/$id}
-api=(https://api.github.com/repos/$repo/{issues/$id/comments,pulls/$id/{comments,reviews}})
+api=(https://api.github.com/repos/$repo/{issues/$id/comments,pulls/$id{,/comments,/reviews}})
 
-echo "api: ${api[*]@Q}"
+printf 'api: %s\n' "${api[@]@Q}"
 
 curl --no-progress-meter "${req_opts[@]}" -- "${api[@]}" |
 jq -nr \
@@ -136,6 +136,10 @@ def expected($ty):
     debug | error("unexpected input type \(type), expected a \($ty)")
   end
   ;
+def pull_body_pack:
+  if has("body")? // false then
+    [.]
+  end;
 def patch_formatter:
   expected("array") |
   if length > 50 then
@@ -198,7 +202,7 @@ def reactions:
   ] | join(" ") | select(bool(.))
   ;
 "\u0000topLevel" as $top |
-reduce (inputs | expected("array"))[] as $review ({};
+reduce (inputs | pull_body_pack | expected("array"))[] as $review ({};
   .[$review.diff_hunk // $top] += [$review | {
     user: .user.login,
     body,
