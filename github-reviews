@@ -226,7 +226,7 @@ reduce (inputs | expected("array"))[] as $review ({};
   , reactions
   , ""
   , if bool(.body) then
-      "  "+bodyer(.body | splits("\n"))
+      "  "+bodyer(.body | splits(" *\r?\n"))
     else
       "  "+csim(90)+"No body provided"+csim
     end
