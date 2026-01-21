@@ -116,9 +116,9 @@ def bodyer(lines):
     if .code or .cur then
       csim(2,48,5,236)+"\u001b[K"+$line+csim(49,22)
     elif $line | startswith("> ") then
-      csim(38,5,251)+"│ "+.[2:]+csim
+      csim(38,5,251)+"│ "+.[2:]+csim+"\u001b[K"
     else
-      $line
+      $line+"\u001b[K"
     end
   )
   # markdown inline
