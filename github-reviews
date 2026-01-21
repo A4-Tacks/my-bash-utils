@@ -115,7 +115,7 @@ def bodyer(lines):
     .cur = ($line | test("^ *```[^`]*$")) | if .cur then .code |= not end;
     if .code or .cur then
       csim(2,48,5,236)+"\u001b[K"+$line+csim(49,22)
-    elif $line | startswith("> ") then
+    elif $line | startswith("> ") or .==">" then
       csim(38,5,251)+"│ "+$line[2:]+csim+"\u001b[K"
     else
       $line+"\u001b[K"
