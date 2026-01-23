@@ -1,0 +1,49 @@
+#!/usr/bin/bash
+set -o nounset
+set -o errtrace
+set -o pipefail
+function CATCH_ERROR { # {{{
+    local __LEC=$? __i __j
+    set +x
+    echo "Traceback (most recent call last):" >&2
+    for ((__i = ${#FUNCNAME[@]} - 1; __i >= 0; --__i)); do
+        printf '  File %q line %s in %q\n' >&2 \
+            "${BASH_SOURCE[__i]}" \
+            "${BASH_LINENO[__i]}" \
+            "${FUNCNAME[__i]}"
+        if ((BASH_LINENO[__i])) && [ -f "${BASH_SOURCE[__i]}" ]; then
+            for ((__j = 0; __j < BASH_LINENO[__i]; ++__j)); do
+                read -r REPLY
+            done < "${BASH_SOURCE[__i]}"
+            printf '    %s\n' "$REPLY" >&2
+        fi
+    done
+    echo "Error: [ExitCode: ${__LEC}]" >&2
+    exit "${__LEC}"
+}
+trap CATCH_ERROR ERR # }}}
+
+shopt -s extglob
+
+# shellcheck disable=2207
+IFS=$'\n'
+assets=$(gh release view "$@" --json assets || exit)
+
+mapfile -t files < <(jq '.assets[]|.name+" "+.url' -r <<< "$assets")
+
+PS3="select to download> "
+select file in "${files[@]% *}"; do
+    if [[ $REPLY = [0-9]*([0-9]) ]] && ((REPLY < ${#files[@]})); then
+        url=${files[REPLY-1]##* }
+        break
+    fi
+    echo "Invalid file nr: ${REPLY@Q}"
+done
+
+echo "${url@A}" >&2
+echo "${file@A}" >&2
+
+url=${url#http?(s)://github.com}
+url=${GH_PROXY:-https://github.com}/$url
+
+wget -t0 -T20 --retry-connrefused --retry-on-host-error --continue "$url" -O "$file" || exit
