@@ -81,7 +81,7 @@ capture("^\\s*
   (https?://)?github\\.com/
   (?<owner>[^/]+)/
   (?<repo>[^/]+)/
-  (pull|issues)/
+  (?<type>pull|issues|releases/tag)/
   (?<number>[^#/]+)
   (
       \\#(?<kind>discussion_r|issuecomment-|pullrequestreview-)
@@ -91,37 +91,20 @@ capture("^\\s*
 "x") // error("Invalid comment url: \(@sh)")
 | ((select(.id) | "/comments") // "") as $com
 | ((select(.kind == "discussion_r") | "pulls") // "issues") as $kind
-| "/repos/\(.owner)/\(.repo)/\($kind+$com)/\(.id // .number)/reactions"
+| ((select(.type | startswith("r")) | "") // "/reactions") as $reactions
+| ((.type | select(startswith("r"))+"s") // $kind) as $type
+| "/repos/\(.owner)/\(.repo)/\($type+$com)/\(.id // .number)\($reactions)"
 ') || exit
 
-if [ -n "$mode" ]; then
-    PS3="select emoji> "
-    eval "$(jq -nr "$emoji"'|to_entries|
-    "select _ in \(map("\(.value) (\(.key))"|@sh)|join(" ")); do case $REPLY in",
-    "    \(to_entries[]|"(\(.key+1)) NR=$REPLY; REPLY=\(.value.key|@sh); break;;")",
-    "    (*) echo Invalid REPLY;;",
-    "esac done"')" || exit
-
-    case "$mode" in
-        POST)   opts=(-f "content=$REPLY"); rapi=$api;;
-        DELETE) echo 'Unsupport delete reactions' >&2; exit 2;;
-    esac
-
-    echo "rapi: ${rapi@Q}" >&2
-
-    retry gh api --method $mode \
+while echo "api: ${api@Q}" >&2; do
+    reactions=$(retry gh api --method GET \
         -H "Accept: application/vnd.github+json" \
         -H "X-GitHub-Api-Version: 2022-11-28" \
-        "${opts[@]}" \
-        "$rapi" | jq 'select(.node_id and .user.id | not)'
-fi
+        "$api") || exit
+    eval "$(jq -r <<< "$reactions" '(objects.reactions.url | "api=\(@sh)") // "break"')"
+    api=${api#https://api.github.com}
+done
 
-echo "api: ${api@Q}" >&2
-
-reactions=$(retry gh api --method GET \
-    -H "Accept: application/vnd.github+json" \
-    -H "X-GitHub-Api-Version: 2022-11-28" \
-    "$api") || exit
 
 jq -r <<< "$reactions" "$emoji"' as $reactions |
 def elap:
@@ -154,3 +137,25 @@ sort_by(.created_at | fromdate)[]
 | .user |= .login
 | "\(.user+g(26)) at \(.created_at+g(41))"+$reactions[.content]+" ("+.content+")"
 '
+
+if [ -n "$mode" ]; then
+    PS3="select emoji> "
+    eval "$(jq -nr "$emoji"'|to_entries|
+    "select _ in \(map("\(.value) (\(.key))"|@sh)|join(" ")); do case $REPLY in",
+    "    \(to_entries[]|"(\(.key+1)) NR=$REPLY; REPLY=\(.value.key|@sh); break;;")",
+    "    (*) echo Invalid REPLY;;",
+    "esac done"')" || exit
+
+    case "$mode" in
+        POST)   opts=(-f "content=$REPLY"); rapi=$api;;
+        DELETE) echo 'Unsupport delete reactions' >&2; exit 2;;
+    esac
+
+    echo "rapi: ${rapi@Q}" >&2
+
+    retry gh api --method $mode \
+        -H "Accept: application/vnd.github+json" \
+        -H "X-GitHub-Api-Version: 2022-11-28" \
+        "${opts[@]}" \
+        "$rapi" | jq 'select(.node_id and .user.id | not)'
+fi
