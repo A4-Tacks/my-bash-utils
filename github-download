@@ -25,7 +25,32 @@ trap CATCH_ERROR ERR # }}}
 
 shopt -s extglob
 
-# shellcheck disable=2207
+args=()
+output=''
+OPTIND=1
+while case "${!OPTIND---}" in
+    -*?)false;;
+    *)  args+=("${!OPTIND}"); ((++OPTIND)); continue
+esac || getopts hR:D: opt; do case "$opt" in
+    h)
+        printf 'Usage: %q [Options]\n' "${0##*/}"
+        echo
+        printf '%s\n' \
+            'Options:' \
+            '    -D <dir>           output directory' \
+            '    -R <repo>          target repo' \
+            '    -h                 show help' \
+            && exit
+        ;;
+    R) args+=(-R "$OPTARG");;
+    D) output=$OPTARG;;
+    :|\?)
+        ((--OPTIND <= 0)) && OPTIND=1
+        printf '%q: parse args failed, near by %q\n' "$0" "${!OPTIND}" >&2
+        exit 2
+esac done
+set -- "${args[@]}" "${@:OPTIND}"
+
 IFS=$'\n'
 assets=$(gh release view "$@" --json assets || exit)
 
@@ -46,4 +71,4 @@ echo "${file@A}" >&2
 url=${url#http?(s)://github.com}
 url=${GH_PROXY:-https://github.com}/$url
 
-wget -t0 -T20 --retry-connrefused --retry-on-host-error --continue "$url" -O "$file" || exit
+wget -t0 -T20 --retry-connrefused --retry-on-host-error --continue "$url" -O "$output/$file" || exit
