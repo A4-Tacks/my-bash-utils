@@ -142,6 +142,7 @@ def expected($ty):
 def pull_body_pack:
   if has("body")? // false then
     if has("title") then .body = .title+"\n\n"+.body end |
+    if .merged then .state = "merged" end |
     [.]
   end;
 def patch_formatter:
