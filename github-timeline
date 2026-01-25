@@ -1,0 +1,129 @@
+#!/usr/bin/bash
+set -o nounset
+set -o errtrace
+set -o pipefail
+function CATCH_ERROR { # {{{
+    local __LEC=$? __i __j
+    set +x
+    echo "Traceback (most recent call last):" >&2
+    for ((__i = ${#FUNCNAME[@]} - 1; __i >= 0; --__i)); do
+        printf '  File %q line %s in %q\n' >&2 \
+            "${BASH_SOURCE[__i]}" \
+            "${BASH_LINENO[__i]}" \
+            "${FUNCNAME[__i]}"
+        if ((BASH_LINENO[__i])) && [ -f "${BASH_SOURCE[__i]}" ]; then
+            for ((__j = 0; __j < BASH_LINENO[__i]; ++__j)); do
+                read -r REPLY
+            done < "${BASH_SOURCE[__i]}"
+            printf '    %s\n' "$REPLY" >&2
+        fi
+    done
+    echo "Error: [ExitCode: ${__LEC}]" >&2
+    exit "${__LEC}"
+}
+trap CATCH_ERROR ERR # }}}
+
+opts=()
+args=()
+OPTIND=1
+while case "${!OPTIND---}" in
+    -*?)false;;
+    *)  args+=("${!OPTIND}"); ((++OPTIND)); continue
+esac || getopts hR: opt; do case "$opt" in
+    h)
+        printf 'Usage: %q [Options] <number>\n' "${0##*/}"
+        echo
+        printf '%s\n' \
+            'Options:' \
+            '    -R <repo>          target repo' \
+            '    -h                 show help' \
+            && exit
+        ;;
+    R) opts+=(-R "$OPTARG");;
+    :|\?)
+        ((--OPTIND <= 0)) && OPTIND=1
+        printf '%q: parse args failed, near by %q\n' "$0" "${!OPTIND}" >&2
+        exit 2
+esac done
+set -- "${args[@]}" "${@:OPTIND}"
+if [ $# -gt 1 ]; then
+    printf '%q: unexpected arg %q\n' "$0" "$2" >&2
+    exit 2
+fi
+
+number=${1:?required a issue number}
+repo=$(gh repo set-default -v || exit)
+api=https://api.github.com/repos/$repo/issues/$number/timeline
+
+echo "${api@A}" >&2
+
+req_opts=(
+    --retry-all-errors
+    --retry 4
+    --connect-timeout 15
+    -H "Accept: application/vnd.github+json"
+    -H "X-GitHub-Api-Version: 2022-11-28"
+)
+
+curl --no-progress-meter "${req_opts[@]}" -- "$api" | jq -r '
+def elap:
+  [
+    (now, fromdate)
+    | strftime("%s")
+    | tonumber
+  ]
+  | first-last
+  | [
+      ., (
+        ./60 | ., (
+          ./60 | ., (
+            ./24 | ., (
+              ./30.4375 | ., (
+                ./12)))))
+      | floor
+    ]
+  | [" seconds", " minutes", "h", "d", " months", " years"] as $label
+  | last(to_entries[]
+    | [.value, $label[.key]]
+    | select(first > 1)
+    | join("")
+  )
+  ;
+def csim(seq): [seq]|"\u001b[\(join(";"))m";
+def csim: csim(empty);
+def fi($n): tostring | .+" "*($n-length);
+def rtrim: sub("\\s+$"; "");
+def title: (.[:1]|ascii_upcase)+(.[1:]|ascii_downcase);
+def short($n): gsub("\n+"; "  .  ") | if length > $n then .[:$n-3]+"..." end;
+def take(path; do): objects | ([path] | do), del(path);
+def default_to(prefer; norm):
+  if isempty(prefer | values) then prefer = (first(norm | values) // null) end
+  | if any(prefer == norm; .) then del(norm) end;
+
+.[]
+| (to_entries | sort_by(.key | endswith("_url")) | from_entries)
+| (.[] | select(has("login")?)) |= .login
+| .source |= .[]?.number?
+| .label |= .name?
+| default_to(.created_at; .submitted_at, .committer.date)
+| default_to(.actor; .user, .committer.name)
+| default_to(.created_at; .updated_at)
+| del(.url, .node_id, .id, .reactions, .author_association, ._links)
+| del(.sha, .author, .committer, .tree, .parents, .verification)
+| map_values(values)
+| (.[] | strings) |= select(test("^https?://api\\.github\\.com") | not)
+| .[keys[] | select(endswith("_at"))] |= elap
+| .event |= (title|gsub("[_-]"; " "))
+| take(.actor, .created_at, .updated_at, .event;
+  . as[$actor, $created_at, $updated_at, $event] |
+       ($updated_at | " update at "+values // "") as $update |
+       "",
+       csim(1)+"\($actor | fi(30))\($event|fi(27)) • \($created_at+$update)"+csim)
+| strings,
+  (objects | select(length != 0) | ""),
+  (objects
+  | to_entries[]
+  | (.value|@text|rtrim) as $content
+  | " • \(.key|fi(12)) : \(if .key | endswith("_url") then $content else $content | short(80) end)"
+  )
+'
