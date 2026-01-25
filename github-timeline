@@ -103,12 +103,12 @@ def default_to(prefer; norm):
 .[]
 | (to_entries | sort_by(.key | endswith("_url")) | from_entries)
 | (.[] | select(has("login")?)) |= .login
-| .source |= .[]?.number?
 | .label |= .name?
+| . + .rename + ((.source[]? | pick(.title, .number, .html_url)?) // null)
 | default_to(.created_at; .submitted_at, .committer.date)
 | default_to(.actor; .user, .committer.name)
 | default_to(.created_at; .updated_at)
-| del(.url, .node_id, .id, .reactions, .author_association, ._links)
+| del(.url, .node_id, .id, .reactions, .author_association, ._links, .rename, .source)
 | del(.sha, .author, .committer, .tree, .parents, .verification)
 | map_values(values)
 | (.[] | strings) |= select(test("^https?://api\\.github\\.com") | not)
