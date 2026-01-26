@@ -57,7 +57,7 @@ fi
 shopt -s extglob
 repo=${repo##?(http?(s)://)?(www.)github.com/}
 
-number=${1:-$(gh pr view --json number | jq .number)}
+number=${1:-$(gh pr view --json number | jq .number || exit)}
 repo=${repo:-$(gh repo set-default -v || exit)}
 api=https://api.github.com/repos/$repo/issues/$number/timeline
 [ -n "$page" ] && api+="?page=$page"
