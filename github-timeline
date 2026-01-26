@@ -25,21 +25,24 @@ trap CATCH_ERROR ERR # }}}
 
 opts=()
 args=()
+page=''
 OPTIND=1
 while case "${!OPTIND---}" in
     -*?)false;;
     *)  args+=("${!OPTIND}"); ((++OPTIND)); continue
-esac || getopts hR: opt; do case "$opt" in
+esac || getopts hR:p: opt; do case "$opt" in
     h)
         printf 'Usage: %q [Options] [number]\n' "${0##*/}"
         echo
         printf '%s\n' \
             'Options:' \
             '    -R <repo>          target repo' \
+            '    -p <page>          set show page' \
             '    -h                 show help' \
             && exit
         ;;
     R) opts+=(-R "$OPTARG");;
+    p) page=$OPTARG;;
     :|\?)
         ((--OPTIND <= 0)) && OPTIND=1
         printf '%q: parse args failed, near by %q\n' "$0" "${!OPTIND}" >&2
@@ -54,6 +57,7 @@ fi
 number=${1:-$(gh pr view --json number | jq .number)}
 repo=$(gh repo set-default -v || exit)
 api=https://api.github.com/repos/$repo/issues/$number/timeline
+[ -n "$page" ] && api+="?page=$page"
 
 echo "${api@A}" >&2
 
