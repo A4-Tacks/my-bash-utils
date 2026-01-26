@@ -23,9 +23,9 @@ function CATCH_ERROR { # {{{
 }
 trap CATCH_ERROR ERR # }}}
 
-opts=()
 args=()
 page=''
+repo=''
 OPTIND=1
 while case "${!OPTIND---}" in
     -*?)false;;
@@ -41,7 +41,7 @@ esac || getopts hR:p: opt; do case "$opt" in
             '    -h                 show help' \
             && exit
         ;;
-    R) opts+=(-R "$OPTARG");;
+    R) repo=$OPTARG;;
     p) page=$OPTARG;;
     :|\?)
         ((--OPTIND <= 0)) && OPTIND=1
@@ -54,8 +54,11 @@ if [ $# -gt 1 ]; then
     exit 2
 fi
 
+shopt -s extglob
+repo=${repo##?(http?(s)://)?(www.)github.com/}
+
 number=${1:-$(gh pr view --json number | jq .number)}
-repo=$(gh repo set-default -v || exit)
+repo=${repo:-$(gh repo set-default -v || exit)}
 api=https://api.github.com/repos/$repo/issues/$number/timeline
 [ -n "$page" ] && api+="?page=$page"
 
