@@ -31,7 +31,7 @@ while case "${!OPTIND---}" in
     *)  args+=("${!OPTIND}"); ((++OPTIND)); continue
 esac || getopts hR: opt; do case "$opt" in
     h)
-        printf 'Usage: %q [Options] <number>\n' "${0##*/}"
+        printf 'Usage: %q [Options] [number]\n' "${0##*/}"
         echo
         printf '%s\n' \
             'Options:' \
@@ -51,7 +51,7 @@ if [ $# -gt 1 ]; then
     exit 2
 fi
 
-number=${1:?required a issue number}
+number=${1:-$(gh pr view --json number | jq .number)}
 repo=$(gh repo set-default -v || exit)
 api=https://api.github.com/repos/$repo/issues/$number/timeline
 
