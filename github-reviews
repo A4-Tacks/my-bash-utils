@@ -23,7 +23,6 @@ function CATCH_ERROR { # {{{
 }
 trap CATCH_ERROR ERR # }}}
 
-gh_opts=(--json url)
 req_opts=(
     --retry-all-errors
     --retry 4
@@ -32,6 +31,7 @@ req_opts=(
     -H "X-GitHub-Api-Version: 2022-11-28"
 )
 args=()
+repo=''
 OPTIND=1
 while case "${!OPTIND---}" in
     -*?)false;;
@@ -43,9 +43,9 @@ esac || getopts haR: opt; do case "$opt" in
             grep -oP 'oauth_token: *\K.*' ~/.config/gh/hosts.yml | tail -n1
         )}")
         ;;
-    R) gh_opts+=(-R "$OPTARG");;
+    R) repo=$OPTARG;;
     h)
-        printf 'Usage: %q [Options]\n' "${0##*/}"
+        printf 'Usage: %q [Options] [number]\n' "${0##*/}"
         echo 'show github pull request reviews'
         echo
         printf '%s\n' \
@@ -61,6 +61,16 @@ esac || getopts haR: opt; do case "$opt" in
 esac done
 set -- "${args[@]}" "${@:OPTIND}"
 
+if [ $# -gt 1 ]; then
+    printf '%q: unexpected arg %q\n' "$0" "$2" >&2
+    exit 2
+fi
+
+shopt -s extglob
+repo=${repo##?(http?(s)://)?(www.)github.com/}
+repo=${repo:-$(gh repo set-default -v || exit)}
+id=${1:-$(gh pr view --json number | jq .number || exit)}
+
 function fail { # {{{
     echo "fail: ${*@Q}" >&2
     return 1
@@ -68,12 +78,6 @@ function fail { # {{{
 
 hash gh curl jq
 
-url=$(gh pr view "${gh_opts[@]}" -- "$@" | jq -r .url || exit)
-[[ $url = */pull/* ]] || fail "$url"
-[[ $url = https://github.com/* ]] || fail "$url"
-content=${url#https://github.com/}
-id=${content##*/}
-repo=${content%/pull/$id}
 api=(https://api.github.com/repos/$repo/{issues/$id/comments,pulls/$id{,/comments,/reviews}})
 
 printf 'api: %s\n' "${api[@]@Q}"
