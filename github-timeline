@@ -101,11 +101,14 @@ def csim: csim(empty);
 def fi($n): tostring | .+" "*($n-length);
 def rtrim: sub("\\s+$"; "");
 def title: (.[:1]|ascii_upcase)+(.[1:]|ascii_downcase);
-def short($n): gsub("( *\r*\n)+"; "  .  ") | if length > $n then .[:$n-3]+"..." end;
 def take(path; do): objects | ([path] | do), del(path);
 def default_to(prefer; norm):
   if isempty(prefer | values) then prefer = (first(norm | values) // null) end
   | if any(prefer == norm; .) then del(norm) end;
+def short($n):
+  gsub("^(>.*( *\r*\n)+)+"; "")
+  | gsub("( *\r*\n)+"; "  .  ")
+  | if length > $n then .[:$n-3]+"..." end;
 
 .[]
 | (to_entries | sort_by(.key | endswith("_url")) | from_entries)
