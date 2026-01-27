@@ -428,7 +428,8 @@ function short-git { # {{{
                         -g commit.status=false \
                         -c rebase -i HEAD^^;;
             C)  read -erp 'git switch -c ' ref && git -a switch -c "$ref";;
-            N)  read -erp 'git branch -m ' ref && git -a branch -m "$ref";;
+            N)  read -erp 'git branch -m ' -i "$(command git branch --show-current)" ref \
+                    && git -a branch -m "$ref";;
             X)  git -a status &&
                     read -rp "==> reset --hard HEAD^ ? [Y/n]" REPLY &&
                     [[ -z $REPLY || $REPLY = [Yy] ]] && git -a reset --hard HEAD^
