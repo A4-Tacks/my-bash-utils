@@ -26,7 +26,7 @@ trap CATCH_ERROR ERR # }}}
 shopt -s extglob
 
 args=()
-output=''
+output='.'
 OPTIND=1
 while case "${!OPTIND---}" in
     -*?)false;;
@@ -68,7 +68,7 @@ done
 echo "${url@A}" >&2
 echo "${file@A}" >&2
 
-url=${url#http?(s)://github.com}
+url=${url#http?(s)://github.com/}
 url=${GH_PROXY:-https://github.com}/$url
 
 wget -t0 -T20 --retry-connrefused --retry-on-host-error --continue "$url" -O "$output/$file" || exit
