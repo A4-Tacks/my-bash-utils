@@ -1,11 +1,21 @@
 #!/bin/sh
 
+mode=edit
+
 ref=${1:?expected a git ref}
 shift
 
+if [ "$1" = -e ]; then
+    mode=reword
+    shift
+fi
+
 if [ "$ref" = -h ] || [ "$ref" = --help ]; then
     printf 'Usage: %s <ref> [Options]\n' "${0##*/}"
-    echo 'Editing target commit (based git-rebase, cannot rewrite merge commit)'
+    echo 'Editing target commit'
+    echo
+    echo 'Options:'
+    echo '    -e        Use reword instead of edit'
     exit
 fi
 
@@ -17,5 +27,5 @@ if ! git merge-base --is-ancestor "$ref" HEAD; then
 fi
 
 git -c advice.waitingForEditor=false \
-    -c sequence.editor="sed -Ei '/^pick +$ref/s/^pick/edit/'" \
+    -c sequence.editor="sed -Ei '/^pick +$ref/s/^pick/$mode/'" \
     rebase -i "$ref^" "$@"
