@@ -1,0 +1,21 @@
+#!/bin/sh
+
+ref=${1:?expected a git ref}
+shift
+
+if [ "$ref" = -h ] || [ "$ref" = --help ]; then
+    printf 'Usage: %s <ref> [Options]\n' "${0##*/}"
+    echo 'Editing target commit (based git-rebase, cannot rewrite merge commit)'
+    exit
+fi
+
+ref=$(git rev-parse --short "$ref") || exit
+
+if ! git merge-base --is-ancestor "$ref" HEAD; then
+    echo "${0##*/}: HEAD not contains $ref"
+    exit 2
+fi
+
+git -c advice.waitingForEditor=false \
+    -c sequence.editor="sed -Ei '/^pick +$ref/s/^pick/edit/'" \
+    rebase -i "$ref^" "$@"
