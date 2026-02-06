@@ -17,7 +17,7 @@ readonly CONST_REFS=(
 
 readonly COMMON_OPERATIONS=( # {{{
     'rebase --'{continue,abort,skip,quit,edit-todo,apply}
-    'reflog'
+    'reflog --no-decorate'
     'diff --staged'
     'commit --amend'
     'log-graph --stat --dirstat'
