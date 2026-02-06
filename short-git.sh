@@ -8,7 +8,7 @@ shopt -s checkwinsize
 
 echo -n | cat # init winsize
 export COLUMNS="$COLUMNS"
-supports_each_ref_exclude=$(! git for-each-ref "" --exclude x 2>&-; echo $?)
+supports_each_ref_exclude=$(! command git for-each-ref "" --exclude x 2>&-; echo $?)
 
 readonly CONST_REFS=(
     HEAD FETCH_HEAD ORIG_HEAD MERGE_HEAD REBASE_HEAD
