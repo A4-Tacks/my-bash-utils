@@ -48,11 +48,10 @@ while getopts ho: opt; do case "$opt" in
         exit 2
 esac done
 set -- "${@:OPTIND}"
-if [ $# -ne 0 ]; then
-    printf '%q: unexpected arg %q\n' "$0" "$1" >&2
+if [ $# -gt 3 ]; then
+    printf '%q: unexpected arg %q\n' "$0" "$4" >&2
     exit 2
 fi
-
 
 width=${1-5}
 count=${2-10}
