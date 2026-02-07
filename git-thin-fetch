@@ -1,0 +1,74 @@
+#!/usr/bin/bash
+set -o nounset
+set -o errtrace
+#set -o pipefail
+function CATCH_ERROR { # {{{
+    local __LEC=$? __i __j
+    set +x
+    echo "Traceback (most recent call last):" >&2
+    for ((__i = ${#FUNCNAME[@]} - 1; __i >= 0; --__i)); do
+        printf '  File %q line %s in %q\n' >&2 \
+            "${BASH_SOURCE[__i]}" \
+            "${BASH_LINENO[__i]}" \
+            "${FUNCNAME[__i]}"
+        if ((BASH_LINENO[__i])) && [ -f "${BASH_SOURCE[__i]}" ]; then
+            for ((__j = 0; __j < BASH_LINENO[__i]; ++__j)); do
+                read -r REPLY
+            done < "${BASH_SOURCE[__i]}"
+            printf '    %s\n' "$REPLY" >&2
+        fi
+    done
+    echo "Error: [ExitCode: ${__LEC}]" >&2
+    exit "${__LEC}"
+}
+trap CATCH_ERROR ERR # }}}
+
+function ref { # {{{
+    git show --format='%H' --no-patch "$1"
+} # }}}
+
+origin=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}')
+origin=${origin%%/*}
+
+OPTIND=1
+while getopts ho: opt; do case "$opt" in
+    h)
+        printf 'Usage: %q [Options] [width] [count] [ref]\n' "${0##*/}"
+        echo
+        printf '%s\n' \
+            'Options:' \
+            '    -o <origin>        origin, default is current upstream' \
+            '    -h                 show help' \
+            && exit
+        ;;
+    o) origin=$OPTARG;;
+    :|\?)
+        ((--OPTIND <= 0)) && OPTIND=1
+        printf '%q: parse args failed, near by %q\n' "$0" "${!OPTIND}" >&2
+        exit 2
+esac done
+set -- "${@:OPTIND}"
+if [ $# -ne 0 ]; then
+    printf '%q: unexpected arg %q\n' "$0" "$1" >&2
+    exit 2
+fi
+
+
+width=${1-5}
+count=${2-10}
+ref=${3:-HEAD}
+
+ref=$(ref "$ref")
+
+for ((i = 0; i < count; ++i)); do
+    printf 'climb '
+    while git rev-parse "$ref^" &>/dev/null; do
+        printf '.'
+        ref+=^
+    done
+    echo ' start fetching'
+    ref=$(ref "$ref")
+    git fetch --depth="$width" "$origin" "$ref"
+done
+
+#git fetch $(ref "$ref")
