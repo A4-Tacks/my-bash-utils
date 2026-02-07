@@ -66,8 +66,8 @@ for ((i = 0; i < count; ++i)); do
         printf '.'
         ref+=^
     done
-    echo ' start fetching'
     ref=$(ref "$ref")
+    echo " start fetching $ref"
     git fetch --depth="$width" "$origin" "$ref"
 done
 
