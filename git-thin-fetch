@@ -24,7 +24,7 @@ function CATCH_ERROR { # {{{
 trap CATCH_ERROR ERR # }}}
 
 function ref { # {{{
-    git show --format='%H' --no-patch "$1"
+    git show --format='%H' --no-patch "$1" --
 } # }}}
 
 origin=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}')
