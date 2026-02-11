@@ -58,7 +58,7 @@ mapfile -t files < <(jq '.assets[]|.name+" "+.url' -r <<< "$assets")
 
 PS3="select to download> "
 select file in "${files[@]% *}"; do
-    if [[ $REPLY = [0-9]*([0-9]) ]] && ((REPLY < ${#files[@]})); then
+    if [[ $REPLY = [0-9]*([0-9]) ]] && ((REPLY <= ${#files[@]})); then
         url=${files[REPLY-1]##* }
         break
     fi
