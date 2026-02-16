@@ -295,7 +295,7 @@ function short-git { # {{{
                     git -a status
                     read -rp "==> Yank from ${ref@Q}? [Y/n] " REPLY
                     [[ "$REPLY" = [Yy] ]] &&
-                        git -a push "${ref%%/*}" --delete "$(command git branch --show-current)"
+                        git -a push "${ref%%/*}" --delete "${ref#*/}"
                 fi
                 ;;
             Y)
@@ -321,10 +321,10 @@ function short-git { # {{{
                 ;;
             $'\cR')
                 ref=$(upstream) &&
-                    git -a rebase "${ref%%/*}/$(command git branch --show-current)";;
+                    git -a rebase "$ref";;
             $'\cI')
                 ref=$(upstream) &&
-                    git -a rebase -i "${ref%%/*}/$(command git branch --show-current)";;
+                    git -a rebase -i "$ref";;
             $'\cU')
                 ref=$(upstream) &&
                     git -a remote update "${ref%%/*}";;
