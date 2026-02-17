@@ -75,10 +75,13 @@ PS3="request reviewer> "; select reviewer in "${meta[@]:1}"; do
 done || exit
 
 test -n "$reviewer"
+payload=$(mktemp request-payload.XXXXXXXXXX)
+trap 'rm "$payload"' exit
+jq -R '{reviewers:[.]}' <<< "$reviewer" > "$payload"
 
 gh api --method $method \
     -H "Accept: application/vnd.github+json" \
     -H "X-GitHub-Api-Version: 2022-11-28" \
     "$api" \
-    --input <(jq -R '{reviewers:[.]}' <<< "$reviewer") |
+    --input "$payload" |
     jq -r '["Reviewers:", "• "+.requested_reviewers[].login]? |.[]' || exit

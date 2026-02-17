@@ -124,7 +124,6 @@ payload=$(
 jq <<< "$payload"
 
 read -rp '--> Send review? [Y/n] ' REPLY
-trap 'rm -r "$tmp"' exit
 case "$REPLY" in
     ''|[Yy]);;
     *) exit
@@ -138,8 +137,12 @@ done
 [ "$event" != PENDING ] &&
     payload=$(jq ".event=\"$event\"" <<< "$payload")
 
+echo "$payload" > "$tmp/payload"
+
 retry gh api --method POST \
     -H "Accept: application/vnd.github+json" \
     -H "X-GitHub-Api-Version: 2022-11-28" \
-    --input - <<< "$payload" \
+    --input "$tmp/payload" \
     "$api"
+
+trap 'rm -r "$tmp"' exit
