@@ -178,7 +178,7 @@ def elap:
     | [.value, $label[.key]]
     | select(first > 1)
     | join("")
-  )
+    ) // ""
   ;
 def clean:
   if type == "string" then
@@ -215,7 +215,7 @@ reduce (inputs | pull_body_pack | expected("array"))[] as $review ({};
   .[$review.diff_hunk // $top] += [$review | {
     user: .user.login,
     body,
-    created_at: (.created_at // .submitted_at),
+    created_at: (.created_at // .submitted_at // "9999-12-31T23:59:59Z"),
     updated_at,
     html_url,
     author_association,
