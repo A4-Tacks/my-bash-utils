@@ -143,6 +143,7 @@ retry gh api --method POST \
     -H "Accept: application/vnd.github+json" \
     -H "X-GitHub-Api-Version: 2022-11-28" \
     --input "$tmp/payload" \
-    "$api"
+    "$api" |
+    jq 'objects.id // .'
 
 trap 'rm -r "$tmp"' exit
