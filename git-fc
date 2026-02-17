@@ -24,7 +24,8 @@ function CATCH_ERROR { # {{{
 trap CATCH_ERROR ERR # }}}
 
 opts=()
-while [ $# -ne 0 ]; do case "${1}" in
+while [ $# -ne 0 ]
+do case "${1}" in
     -h|--help)
         printf 'Usage: %q [Options] <ref>\n' "${0##*/}"
         echo
