@@ -126,7 +126,7 @@ jq <<< "$payload"
 read -rp '--> Send review? [Y/n] ' REPLY
 case "$REPLY" in
     ''|[Yy]);;
-    *) exit
+    *) trap '' exit; exit
 esac
 
 PS3="--> Select review state: "
