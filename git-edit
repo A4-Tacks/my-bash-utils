@@ -10,7 +10,9 @@ if [ "$1" = -e ]; then
     shift
 fi
 
-if [ "$ref" = -h ] || [ "$ref" = --help ]; then
+if [ "$ref" = -h ] ||
+    [ "$ref" = --help ]
+then
     printf 'Usage: %s <ref> [Options]\n' "${0##*/}"
     echo 'Editing target commit'
     echo
