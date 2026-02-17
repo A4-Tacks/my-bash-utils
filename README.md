@@ -13,8 +13,10 @@ As a supplement to github-cli
 - github-comment-review: Add a reply comment for review comments url
 - github-issues: Similar `gh issue list`, but cleanly labels, pullRef/assign and show comments count
 - github-reactions: Show user names of reactions, and send a new reactions
+- github-timeline: Show timeline and event of pulls or issues
 - github-request-review: Request reviewer
 - github-reviews: Show comments, reviews and review comments
+- github-start-review: Create some review on diff hunk
 
 
 git scripts
