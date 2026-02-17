@@ -1,0 +1,74 @@
+#!/usr/bin/bash
+set -o nounset
+set -o errtrace
+set -o pipefail
+function CATCH_ERROR { # {{{
+    local __LEC=$? __i __j
+    set +x
+    echo "Traceback (most recent call last):" >&2
+    for ((__i = ${#FUNCNAME[@]} - 1; __i >= 0; --__i)); do
+        printf '  File %q line %s in %q\n' >&2 \
+            "${BASH_SOURCE[__i]}" \
+            "${BASH_LINENO[__i]}" \
+            "${FUNCNAME[__i]}"
+        if ((BASH_LINENO[__i])) && [ -f "${BASH_SOURCE[__i]}" ]; then
+            for ((__j = 0; __j < BASH_LINENO[__i]; ++__j)); do
+                read -r REPLY
+            done < "${BASH_SOURCE[__i]}"
+            printf '    %s\n' "$REPLY" >&2
+        fi
+    done
+    echo "Error: [ExitCode: ${__LEC}]" >&2
+    exit "${__LEC}"
+}
+trap CATCH_ERROR ERR # }}}
+
+function retry { # {{{
+    for _ in {1..5}; do
+        "$@" && return
+    done
+} # }}}
+
+url=$(gh pr view --json url "$@" | jq -r .url || exit)
+
+number=${url##*/}
+repo=${url%/*}
+repo=${repo%/pull}
+repo=${repo#https://}
+repo=${repo#github.com/}
+api=/repos/$repo/pulls/$number/reviews
+echo "${api@A}" >&2
+
+IFS=$'\n'
+
+reviews=$(gh api \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "$api" | jq -r '.[]|select(.state == "PENDING")|"\(.id) \(.user.login)"')
+
+PS3="select a review> "
+select item in $reviews; do
+    test -n "$item" || continue
+    id=${item% *}
+    PS3="select pending review event> "
+    select item in COMMENT REQUEST_CHANGES APPROVE DELETE; do
+        test -n "$item" || continue
+        case "$item" in
+            DELETE)
+                retry gh api --method DELETE "/repos/$repo/pulls/$number/reviews/$id" |
+                    jq 'objects.id // .'
+                ;;
+            *)
+                tmp=$(mktemp review-body.XXXXXXXXXX --tmpdir)
+                "${EDITOR:-vim}" "$tmp"
+                retry gh api --method POST \
+                    -f "body=$(<"$tmp")" \
+                    -f "event=$item" \
+                    "/repos/$repo/pulls/$number/reviews/$id/events" |
+                    jq 'objects.id // .'
+                ;;
+        esac
+        break
+    done
+    exit
+done
