@@ -1,0 +1,145 @@
+#!/usr/bin/bash
+set -o nounset
+set -o errtrace
+set -o pipefail
+function CATCH_ERROR { # {{{
+    local __LEC=$? __i __j
+    set +x
+    echo "Traceback (most recent call last):" >&2
+    for ((__i = ${#FUNCNAME[@]} - 1; __i >= 0; --__i)); do
+        printf '  File %q line %s in %q\n' >&2 \
+            "${BASH_SOURCE[__i]}" \
+            "${BASH_LINENO[__i]}" \
+            "${FUNCNAME[__i]}"
+        if ((BASH_LINENO[__i])) && [ -f "${BASH_SOURCE[__i]}" ]; then
+            for ((__j = 0; __j < BASH_LINENO[__i]; ++__j)); do
+                read -r REPLY
+            done < "${BASH_SOURCE[__i]}"
+            printf '    %s\n' "$REPLY" >&2
+        fi
+    done
+    echo "Error: [ExitCode: ${__LEC}]" >&2
+    exit "${__LEC}"
+}
+trap CATCH_ERROR ERR # }}}
+
+hash git gh jq mktemp awk touch
+
+function run { # {{{
+    printf '==> %q' "$1" >&2
+    printf ' %q' "${@:2}" >&2
+    echo >&2
+    "$@"
+} # }}}
+function retry { # {{{
+    for _ in {1..5}; do
+        "$@" && return
+    done
+} # }}}
+
+ghopts=(
+    --json url
+    --json commits
+)
+
+meta=$(gh pr view "${ghopts[@]}" "$@" || exit)
+url=$(jq '.url' <<< "$meta" -r || exit)
+commit_id=$(jq '.commits[-1].oid' <<< "$meta" -r || exit)
+
+number=${url##*/}
+api=${url%/*}
+api=${api%/pull}
+api=${api#https://}
+api=${api#github.com/}
+api=/repos/$api/pulls/$number/reviews
+echo "${api@A}" >&2
+
+tmp=$(mktemp -d github-start-review.XXXXXXXXXX --tmpdir)
+readonly tmp
+trap 'echo "Abort, tmp files: ${tmp@Q}" >&2' exit
+
+awk 1 << \EOF > "$tmp/preset"
+setlocal comments=:\|
+nnoremap <buffer> o o<esc>I\|
+syn match reviewComment /^|.*/
+hi def link reviewComment DiffChange
+EOF
+
+run gh pr diff "$url" > "$tmp/diff.patch"
+run "${EDITOR:-vim}"    "$tmp/diff.patch" +"source $tmp/preset"
+run "${EDITOR:-vim}"    "$tmp/body.md"
+
+touch "$tmp/body.md"
+
+awk '
+BEGIN {
+    file=-10000000
+    header=-10000000
+}
+!/^\|/{++lcnt}
+/^@@/&&header==-1{header=lcnt}
+/^--- +[ab]\//{
+    sub(/^--- +[ab]\//, "")
+    file=$0
+    header=-1
+}
+/^\|/{
+    sub(/^\|/, "")
+    chunks[file,lcnt-header]=chunks[file,lcnt-header]$0"\n"
+}
+END {
+    for (file in chunks) {
+        comment=chunks[file]
+        pos=file
+        sub(SUBSEP".*", "", file)
+        sub(".*"SUBSEP, "", pos)
+
+        print file
+        print pos
+
+        printf "\""
+        for (i = 1; i <= length(comment); ++i) {
+            ch = substr(comment, i, 1)
+            if (ch~/["\\]/) {
+                printf "\\%s",ch
+            } else if (ch == "\n") {
+                printf "%s", "\\n"
+            } else if (ch != "\r") {
+                printf "%s", ch
+            }
+        }
+        print "\""
+    }
+}
+' "$tmp/diff.patch" > "$tmp/chunks.jsonl"
+
+chunks=$(jq -R '{path: ., position: (input|tonumber), body: (input|fromjson)}' "$tmp/chunks.jsonl")
+payload=$(
+    jq -n <<< "$chunks" \
+        --arg commit_id "$commit_id" \
+        --rawfile body "$tmp/body.md" \
+        '{$commit_id, $body, comments: [inputs]}'
+)
+
+jq <<< "$payload"
+
+read -rp '--> Send review? [Y/n] ' REPLY
+trap 'rm -r "$tmp"' exit
+case "$REPLY" in
+    ''|[Yy]);;
+    *) exit
+esac
+
+PS3="--> Select review state: "
+select event in COMMENT REQUEST_CHANGES APPROVE PENDING; do
+    test -n "$event" && break
+done
+
+[ "$event" != PENDING ] &&
+    payload=$(jq ".event=\"$event\"" <<< "$payload")
+
+retry gh api --method POST \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    --input - <<< "$payload" \
+    "$api"
