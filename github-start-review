@@ -77,13 +77,19 @@ BEGIN {
     header=-10000000
 }
 !/^\|/{++lcnt}
-/^@@/&&header==-1{header=lcnt}
-/^--- +[ab]\//{
-    sub(/^--- +[ab]\//, "")
-    file=$0
-    header=-1
+/^@@/&&header==-10000{header=lcnt}
+/^(\+\+\+|---) +[ab]\//{
+    sub(/^[+-]+ +[ab]\//, "")
+    if (!/\/null *$/) {
+        file=$0
+        header=-10000
+    }
 }
 /^\|/{
+    if (header < 0) {
+        print "Error: Invalid patch on line "NR", file: "file > "/dev/stderr"
+        exit 1
+    }
     sub(/^\|/, "")
     chunks[file,lcnt-header]=chunks[file,lcnt-header]$0"\n"
 }
