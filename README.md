@@ -17,6 +17,7 @@ As a supplement to github-cli
 - github-request-review: Request reviewer
 - github-reviews: Show comments, reviews and review comments
 - github-start-review: Create some review on diff hunk
+- github-check-prs: Check CI fails, change requests and merge conflicts
 
 
 git scripts
