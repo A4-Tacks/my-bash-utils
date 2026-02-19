@@ -44,12 +44,12 @@ def fi($n): tostring | " "*($n-length)+.;
 
 (max_by(.number).number|@text|length) as $numw
 | .[]
-| ( if .mergeable == "CONFLICTING" then
+| ( if .statusCheckRollup | any(.conclusion == "FAILURE") then
+    "!"
+  elif .mergeable == "CONFLICTING" then
     "λ"
   elif .reviewDecision == "CHANGES_REQUESTED" then
     "*"
-  elif .statusCheckRollup | any(.conclusion == "FAILURE") then
-    "!"
   else
     " "
   end) as $icon
