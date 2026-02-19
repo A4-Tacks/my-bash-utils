@@ -104,6 +104,11 @@ fi
 
 body=$(<"$tmp")
 
+if test -z "$body"; then
+    printf '%q: replies body is empty\n' "${0##*/}" >&2
+    trap '' exit
+    exit 2
+fi
 test -n "$body" # replies body by empty
 
 echo
