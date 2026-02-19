@@ -30,6 +30,14 @@ case "${1}" in
         echo "It may cause errors such as 'unshallow'. It is recommended to run 'git gc --no-prune'"
         exit 0
         ;;
+    -i)
+        vim +'call setline(1, "enter F9 finish")
+        set buftype=nofile
+        nnoremap <buffer> <f9> :exe "norm!ggdd"\|%s/^[^a-zA-Z0-9]*\([a-zA-Z0-9]\+\).*/git shallow \1<cr>:w !bash
+        term ++cols=200 git -c pager.log="head -n150" log --graph --all --oneline
+        nnoremap <buffer> o yy<c-w>jp<c-w>pj'
+        exit
+        ;;
 esac
 
 git_root=$(git rev-parse --show-toplevel)
