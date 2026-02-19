@@ -97,7 +97,7 @@ else
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "$api" |
-            jq -r 'if .user then .body+"" else halt_error end' > "$tmp"
+            jq -r 'if .user then .body+"" | sub("\n+$"; "") else halt_error end' > "$tmp"
     fi
     "${EDITOR:-/usr/bin/vim}" "$tmp"
 fi
