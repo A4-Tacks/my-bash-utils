@@ -41,7 +41,7 @@ esac || getopts h-f:u opt; do case "$opt" in
         printf '%s\n' \
             'Options:' \
             '    -f <file>          comment body from file' \
-            '    -u                 update a comment' \
+            '    -u                 update a review or issue comment' \
             '    -h                 show help' \
             && exit
         ;;
@@ -71,11 +71,12 @@ capture("^\\s*
   (?<repo>[^/]+)/
   pull/
   (?<number>[^#/]+)
-  \\#discussion_r
+  \\#(?<kind>discussion_r|issuecomment-)
   (?<id>\\d+)
   \\s*$";
 "x") // error("Invalid comment url: \(@sh)")
-| "/repos/\(.owner)/\(.repo)/pulls/" as $pre
+| (if .kind | startswith("issue") then "issues" else "pulls" end) as $kind
+| "/repos/\(.owner)/\(.repo)/\($kind)/" as $pre
 | if $method == "PATCH" then
     "comments/\(.id)"
   else
