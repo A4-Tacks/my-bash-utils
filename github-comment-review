@@ -27,12 +27,13 @@ hash gh jq mktemp cat
 
 unset body body_file
 
+method=POST
 args=()
 OPTIND=1
 while case "${!OPTIND---}" in
     -*?)false;;
     *)  args+=("${!OPTIND}"); ((++OPTIND)); continue
-esac || getopts h-f: opt; do case "$opt" in
+esac || getopts h-f:u opt; do case "$opt" in
     h|-)
         printf 'Usage: %q [Options] <comment_url>\n' "${0##*/}"
         echo 'Replies review comment'
@@ -40,10 +41,12 @@ esac || getopts h-f: opt; do case "$opt" in
         printf '%s\n' \
             'Options:' \
             '    -f <file>          comment body from file' \
+            '    -u                 update a comment' \
             '    -h                 show help' \
             && exit
         ;;
     f) body_file=$OPTARG;;
+    u) method=PATCH;;
     :|\?)
         ((--OPTIND <= 0)) && OPTIND=1
         printf '%q: parse args failed, near by %q\n' "$0" "${!OPTIND}" >&2
@@ -60,7 +63,7 @@ if [ $# -ne 1 ]; then
     exit 2
 fi
 
-api=$(jq -Rrs <<< "$1" '
+api=$(jq -Rrs --arg method "$method" <<< "$1" '
 sub("\\s*$"; "") |
 capture("^\\s*
   (https?://)?github\\.com/
@@ -72,7 +75,13 @@ capture("^\\s*
   (?<id>\\d+)
   \\s*$";
 "x") // error("Invalid comment url: \(@sh)")
-| "/repos/\(.owner)/\(.repo)/pulls/\(.number)/comments/\(.id)/replies"
+| "/repos/\(.owner)/\(.repo)/pulls/" as $pre
+| if $method == "PATCH" then
+    "comments/\(.id)"
+  else
+    "\(.number)/comments/\(.id)/replies"
+  end
+| $pre+.
 ') || exit
 echo "${api@A}" >&2
 
@@ -83,6 +92,13 @@ trap "echo Aborted, replies-file: ${tmp@Q}" exit
 if [ -v body_file ]; then
     cat -- "$body_file" > "$tmp"
 else
+    if [ $method = PATCH ]; then
+        gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "$api" |
+            jq -r 'if .user then .body+"" else halt_error end' > "$tmp"
+    fi
     "${EDITOR:-/usr/bin/vim}" "$tmp"
 fi
 
@@ -97,7 +113,7 @@ echo
 read -rp 'Submit comment?' || (echo;exit 1)
 [[ -n $REPLY && $REPLY != [Yy] ]] && (exit 1)
 
-gh api --method POST \
+gh api --method $method \
     -H "Accept: application/vnd.github+json" \
     -H "X-GitHub-Api-Version: 2022-11-28" \
     "$api" \
