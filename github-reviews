@@ -147,6 +147,7 @@ def pull_body_pack:
   if has("body")? // false then
     if has("title") then .body = .title+"\n\n"+.body end |
     if .merged then .state = "merged" end |
+    if .draft then .state = "draft" end |
     [.]
   end;
 def patch_formatter:
