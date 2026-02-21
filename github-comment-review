@@ -107,6 +107,7 @@ body=$(<"$tmp")
 
 if test -z "$body"; then
     printf '%q: replies body is empty\n' "${0##*/}" >&2
+    rm "$tmp"
     trap '' exit
     exit 2
 fi
