@@ -211,6 +211,16 @@ def reactions:
   | "\(.value | select(. != 0)) \($reactions[.key] | values)"
   ] | join(" ") | select(bool(.))
   ;
+def meta:
+  .meta
+  | select(.additions)
+  | [csim(32)+"+\(.additions)"
+    ,csim(31)+"-\(.deletions)"
+    ,"(\(.changed_files) files)"
+    ,(select(.mergeable_state == "dirty") | csim(1)+"mergeable:\(csim(22,33))dirty")
+    ,(select(.auto_merge) | csim(1)+"automerge:\(.auto_merge)")]
+  | join(csim+" ")+csim
+  ;
 "\u0000topLevel" as $top |
 reduce (inputs | pull_body_pack | expected("array"))[] as $review ({};
   .[$review.diff_hunk // $top] += [$review | {
@@ -223,6 +233,13 @@ reduce (inputs | pull_body_pack | expected("array"))[] as $review ({};
     path,
     state,
     reactions,
+    meta: {
+      additions,
+      deletions,
+      changed_files,
+      mergeable_state,
+      auto_merge,
+    },
   }]
 )
 | .[][].body |= clean
@@ -237,6 +254,7 @@ reduce (inputs | pull_body_pack | expected("array"))[] as $review ({};
       " update at \(.updated_at|elap)" else ""
     end) as $update
   | "\n"+csim(1)+("\(.user)\(association)\(state)"|fi(50))+csim+" • \((.created_at|elap)+$update)"
+  , meta
   , reactions
   , ""
   , if bool(.body) then
