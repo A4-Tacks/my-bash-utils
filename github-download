@@ -71,4 +71,8 @@ echo "${file@A}" >&2
 url=${url#http?(s)://github.com/}
 url=${GH_PROXY:-https://github.com}/$url
 
-wget -t0 -T20 --retry-connrefused --retry-on-host-error --continue "$url" -O "$output/$file" || exit
+if hash aria2c 2>&-; then
+    aria2c -U Wget/1.25.0 -s8 -x4 -o "$output/$file" "$url" || exit
+else
+    wget -t0 -T20 --retry-connrefused --retry-on-host-error --continue "$url" -O "$output/$file" || exit
+fi
