@@ -59,14 +59,21 @@ readonly tmp
 trap 'echo "Abort, tmp files: ${tmp@Q}" >&2' exit
 
 awk 1 << \EOF > "$tmp/preset"
+setf git
+set foldmethod=syntax nowrap
 setlocal comments=:\|
 nnoremap <buffer> o o<esc>I\|
 syn match reviewComment /^|.*/
 hi def link reviewComment DiffChange
 EOF
 
+case ${EDITOR:-vim} in
+    *vi|*vim) cfg=(+"source $tmp/preset");;
+    *) cfg=();;
+esac
+
 run gh pr diff "$url" > "$tmp/diff.patch"
-run "${EDITOR:-vim}"    "$tmp/diff.patch" +"source $tmp/preset"
+run "${EDITOR:-vim}"    "$tmp/diff.patch" "${cfg[@]}"
 run "${EDITOR:-vim}"    "$tmp/body.md"
 
 touch "$tmp/body.md"
