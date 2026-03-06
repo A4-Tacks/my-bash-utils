@@ -397,11 +397,14 @@ function short-git { # {{{
                     files=()
                     for file in "${tmp[@]::${#tmp[@]}-1}"; do
                         file=./$file
-                        files[$file]=0
+                        files[$file]=2
                         while [[ $file = */?* ]]; do
                             file=${file%/?*}
-                            files[$file]=0
+                            ((files[$file]+=1))
                         done
+                    done
+                    for file in "${!files[@]}"; do
+                        ((files[$file] <= 1)) && unset "files[$file]"
                     done
 
                     local -a sorted_files
