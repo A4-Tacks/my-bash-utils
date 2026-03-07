@@ -54,6 +54,11 @@ api=${api#github.com/}
 api=/repos/$api/pulls/$number/reviews
 echo "${api@A}" >&2
 
+jq -r <<< "$meta" '.commits[]
+| "* \(.messageHeadline)"
+, (.messageBody | gsub("[\u001b\r]+|\\s+$"; "") | "| "+splits(" *\n"))
+'
+
 tmp=$(mktemp -d github-start-review.XXXXXXXXXX --tmpdir)
 readonly tmp
 trap 'echo "Abort, tmp files: ${tmp@Q}" >&2' exit
