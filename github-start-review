@@ -63,7 +63,7 @@ setf git
 set foldmethod=syntax nowrap
 setlocal comments=:\|
 nnoremap <buffer> o o<esc>I\|
-syn match reviewComment /^|.*/
+syn match reviewComment /^|.*/ containedin=TOP
 hi def link reviewComment DiffChange
 EOF
 
