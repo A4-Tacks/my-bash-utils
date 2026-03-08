@@ -94,6 +94,7 @@ jq -r <<< "$meta" '.commits[]
 tmp=$(mktemp -d github-start-review.XXXXXXXXXX --tmpdir)
 readonly tmp
 trap 'echo "Abort, tmp files: ${tmp@Q}" >&2' exit
+function accept { trap 'rm -r "$tmp"' exit; }
 
 foldmethod='setlocal foldmethod=syntax'
 case ${EDITOR:-vim} in
@@ -191,7 +192,7 @@ jq <<< "$payload"
 read -rp '--> Send review? [Y/n] ' REPLY
 case "$REPLY" in
     ''|[Yy]);;
-    *) trap '' exit; exit
+    *) accept; exit
 esac
 
 cp "$tmp/raw.patch" "$current_cache"
@@ -214,4 +215,4 @@ retry gh api --method POST \
     "$api" |
     jq 'objects.id // .'
 
-trap 'rm -r "$tmp"' exit
+accept
