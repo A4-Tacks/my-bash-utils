@@ -56,7 +56,7 @@ echo "${api@A}" >&2
 
 jq -r <<< "$meta" '.commits[]
 | "* \(.messageHeadline)"
-, (.messageBody | gsub("[\u001b\r]+|\\s+$"; "") | "| "+splits(" *\n"))
+, (.messageBody | gsub("[\u001b\r]+|\\s+$"; "") | select(length!=0) | "| "+splits(" *\n"))
 '
 
 tmp=$(mktemp -d github-start-review.XXXXXXXXXX --tmpdir)
