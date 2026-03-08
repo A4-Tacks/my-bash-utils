@@ -247,7 +247,7 @@ reduce (inputs | pull_body_pack | expected("array"))[] as $review ({};
 | .[][].body |= clean
 | to_entries
 | map(if .key == $top then .value = (.value[] | select(.state != "COMMENTED" or bool(.body)) | [.]) end)
-| sort_by(.value[0].created_at | fromdate)[]
+| sort_by(.value[0] | [(.created_at | fromdate), .state])[]
 |
 ( (.value[0].path | values | "", .)
 , (.key | select(. != $top) | [splits("\n")] | patch_formatter[] | "│ "+differ)
