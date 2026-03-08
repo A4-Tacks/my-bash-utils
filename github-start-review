@@ -23,7 +23,7 @@ function CATCH_ERROR { # {{{
 }
 trap CATCH_ERROR ERR # }}}
 
-hash git gh jq mktemp awk touch
+hash git gh jq mktemp awk touch mkdir gzip gunzip
 
 function run { # {{{
     printf '==> %q' "$1" >&2
@@ -37,6 +37,32 @@ function retry { # {{{
     done
 } # }}}
 
+shopt -s nullglob
+
+diff_old=''
+args=()
+OPTIND=1
+while case "${!OPTIND---}" in
+    -*?)false;;
+    *)  args+=("${!OPTIND}"); ((++OPTIND)); continue
+esac || getopts hd opt; do case "$opt" in
+    h)
+        printf 'Usage: %q [Options]\n' "${0##*/}"
+        echo
+        printf '%s\n' \
+            'Options:' \
+            '    -d                 diff old reviewed patch' \
+            '    -h                 show help' \
+            && exit
+        ;;
+    d) diff_old=1;;
+    :|\?)
+        ((--OPTIND <= 0)) && OPTIND=1
+        printf '%q: parse args failed, near by %q\n' "$0" "${!OPTIND}" >&2
+        exit 2
+esac done
+set -- "${args[@]}" "${@:OPTIND}"
+
 ghopts=(
     --json url
     --json commits
@@ -47,12 +73,18 @@ url=$(jq '.url' <<< "$meta" -r || exit)
 commit_id=$(jq '.commits[-1].oid' <<< "$meta" -r || exit)
 
 number=${url##*/}
-api=${url%/*}
-api=${api%/pull}
-api=${api#https://}
-api=${api#github.com/}
-api=/repos/$api/pulls/$number/reviews
+repo=${url%/*}
+repo=${repo%/pull}
+repo=${repo#https://}
+repo=${repo#github.com/}
+api=/repos/$repo/pulls/$number/reviews
 echo "${api@A}" >&2
+
+cache=$HOME/.cache/github-start-review/$repo/$number
+mkdir -p "$cache"
+exists_caches=("" "$cache"/*)
+latest_cache=${exists_caches[-1]}
+current_cache=$(printf '%s/%.4d-%s' "$cache" ${#exists_caches[@]} "$commit_id")
 
 jq -r <<< "$meta" '.commits[]
 | "* \(.messageHeadline)"
@@ -63,21 +95,36 @@ tmp=$(mktemp -d github-start-review.XXXXXXXXXX --tmpdir)
 readonly tmp
 trap 'echo "Abort, tmp files: ${tmp@Q}" >&2' exit
 
-awk 1 << \EOF > "$tmp/preset"
-setf git
-set foldmethod=syntax nowrap
-setlocal comments=:\|
-nnoremap <buffer> o o<esc>I\|
-syn match reviewComment /^|.*/ containedin=TOP
-hi def link reviewComment DiffChange
-EOF
-
+foldmethod='setlocal foldmethod=syntax'
 case ${EDITOR:-vim} in
-    *vi|*vim) cfg=(+"source $tmp/preset");;
+    *vi|*vim)
+        cfg=(+"so $tmp/preset")
+        if [ -n "$diff_old" ] && [ -n "$latest_cache" ]; then
+            gunzip --quiet --stdout "$latest_cache" > "$tmp/old.patch"
+            foldmethod=diffthis
+            cfg+=(-O "$tmp/old.patch")
+        fi;;
     *) cfg=();;
 esac
 
-run gh pr diff "$url" > "$tmp/diff.patch"
+awk 1 << EOF > "$tmp/preset"
+func LoadPatchPreset()
+    if expand("%") !~? '.*\\.patch\$'
+        return
+    endif
+    setf git
+    $foldmethod
+    setlocal nowrap comments=:\\|
+    nnoremap <buffer> o o<esc>I\\|
+    syn match reviewComment /^|.*/ containedin=TOP
+    hi def link reviewComment DiffChange
+endfunc
+windo call LoadPatchPreset()
+EOF
+
+run gh pr diff "$url" > "$tmp/raw.patch"
+cp "$tmp/raw.patch" "$tmp/diff.patch"
+
 run "${EDITOR:-vim}"    "$tmp/diff.patch" "${cfg[@]}"
 run "${EDITOR:-vim}"    "$tmp/body.md"
 
@@ -146,6 +193,9 @@ case "$REPLY" in
     ''|[Yy]);;
     *) trap '' exit; exit
 esac
+
+cp "$tmp/raw.patch" "$current_cache"
+gzip --quiet "$current_cache"
 
 PS3="--> Select review state: "
 select event in COMMENT REQUEST_CHANGES APPROVE PENDING; do
