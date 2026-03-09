@@ -184,7 +184,7 @@ payload=$(
     jq -n <<< "$chunks" \
         --arg commit_id "$commit_id" \
         --rawfile body "$tmp/body.md" \
-        '{$commit_id, $body, comments: [inputs]}'
+        '{$commit_id, $body, comments: ([inputs]|sort_by(.position))}'
 )
 
 jq <<< "$payload"
