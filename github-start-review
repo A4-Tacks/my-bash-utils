@@ -23,7 +23,7 @@ function CATCH_ERROR { # {{{
 }
 trap CATCH_ERROR ERR # }}}
 
-hash git gh jq mktemp awk touch mkdir gzip gunzip
+hash git gh jq mktemp awk touch mkdir gzip gunzip diff
 
 function run { # {{{
     printf '==> %q' "$1" >&2
@@ -127,6 +127,10 @@ run gh pr diff "$url" > "$tmp/raw.patch"
 cp "$tmp/raw.patch" "$tmp/diff.patch"
 
 run "${EDITOR:-vim}"    "$tmp/diff.patch" "${cfg[@]}"
+
+(diff -u0 "$tmp/raw.patch" "$tmp/diff.patch" || :) |
+    awk '/^@/{p=$0}p&&/^+[^|]|^-/{print p;print"Invalid line: "$0;exit 1}' || exit
+
 run "${EDITOR:-vim}"    "$tmp/body.md"
 
 touch "$tmp/body.md"
