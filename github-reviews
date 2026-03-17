@@ -126,8 +126,7 @@ def bodyer(lines):
     end
   ) | . as [$line, $render] | $line |
   if $render then
-    # markdown inline
-    . + "\u001b[K"
+    . # markdown inline
     | gsub("(?<x>(?<!\\*)\\*[^* ](\\\\|[^`])*?(?<![* ])\\*)"; csim(3)+.x+csim(23))
     | gsub("(?<x>(?<!\\*)\\*\\*[^* ](\\\\|[^`])*?(?<![* ])\\*\\*)"; csim(1)+.x+csim(22))
     | gsub("(?<x>(?<!\\*)\\*\\*\\*[^* ](\\\\|[^`])*?(?<![* ])\\*\\*\\*)"; csim(1,3)+.x+csim(23,22))
