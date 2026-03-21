@@ -1,0 +1,108 @@
+#!/usr/bin/bash
+set -o nounset
+set -o errtrace
+set -o pipefail
+function CATCH_ERROR { # {{{
+    local __LEC=$? __i __j
+    set +x
+    echo "Traceback (most recent call last):" >&2
+    for ((__i = ${#FUNCNAME[@]} - 1; __i >= 0; --__i)); do
+        printf '  File %q line %s in %q\n' >&2 \
+            "${BASH_SOURCE[__i]}" \
+            "${BASH_LINENO[__i]}" \
+            "${FUNCNAME[__i]}"
+        if ((BASH_LINENO[__i])) && [ -f "${BASH_SOURCE[__i]}" ]; then
+            for ((__j = 0; __j < BASH_LINENO[__i]; ++__j)); do
+                read -r REPLY
+            done < "${BASH_SOURCE[__i]}"
+            printf '    %s\n' "$REPLY" >&2
+        fi
+    done
+    echo "Error: [ExitCode: ${__LEC}]" >&2
+    exit "${__LEC}"
+}
+trap CATCH_ERROR ERR # }}}
+
+hash stty gh jq || exit
+
+if test -t 1; then
+    info=$(stty -a || echo 80)
+    cols=${info##*columns }
+    cols=${cols%%;*}
+else
+    cols=999
+fi
+
+gh_opts=(
+    --json reviews
+    --json comments
+    --json additions
+    --json deletions
+    --json title
+    --json number
+    --json state
+    --json closingIssuesReferences
+    --json assignees
+    --json createdAt
+    --json isDraft
+)
+jq_opts=(
+    --argjson cols "$cols"
+)
+
+gh pr list "${gh_opts[@]}" "$@" | jq -r "${jq_opts[@]}" '
+def collen(e): ([.[]|e|@text|length] | max);
+def rfi($n): tostring | .+" "*($n-length);
+def lfi($n): tostring | " "*($n-length)+.;
+def csim(seq): [seq]|"\u001b[\(join(";"))m";
+def csim: csim(empty);
+def short($n): sub("^(?<p>(?:(?:\u001b\\[(\\d*(;\\d*)*)m)*[^\u001b]){0,\($n-3)}+).+"; .p+"...");
+def elap:
+  [
+    (now, fromdate)
+    | strftime("%s")
+    | tonumber
+  ]
+  | first-last
+  | [
+      ., (
+        ./60 | ., (
+          ./60 | ., (
+            ./24 | ., (
+              ./30.4375 | ., (
+                ./12)))))
+      | floor
+    ]
+  | [" seconds", "min", "h", "d", "mon", "year"] as $label
+  | last(to_entries[]
+    | [.value, $label[.key]]
+    | select(first > 1)
+    | join("")
+  )
+  ;
+map(.additions |= "+\(.)"
+  | .deletions |= "-\(.)"
+  | .comments |= ([select(length!=0)|"^\(length)"]|join(""))
+  | .createdAt |= elap
+  | .metadata = .createdAt+.comments
+  | .flags = ([
+      (select(.reviews|length!=0) | "R"),
+      (select(.assignees|length!=0) | "A"),
+      (select(.closingIssuesReferences|length!=0) | "i")
+    ]|join(""))
+  )
+| collen(.number) as $numlen
+| collen(.additions) as $addlen
+| collen(.deletions) as $dellen
+| collen(.flags) as $flaglen
+| collen(.metadata) as $metalen
+| map(.changes = csim(32)+"\(.additions|lfi($addlen)) \(csim(31))\(.deletions|rfi($dellen))"+csim
+    | .number |= lfi($numlen)
+    | .flags |= rfi($flaglen)
+    | .metadata |= rfi($metalen)
+    | if .isDraft or .state != "OPEN" then .number |= csim(38,5,238)+.+csim end
+  )
+| .[]
+| "\(.number) │ \(.changes) │ \(.flags) │ \(.metadata) │ \(.title)"
+| short($cols)
+'
