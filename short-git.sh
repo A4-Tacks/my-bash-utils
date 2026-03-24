@@ -223,7 +223,7 @@ function short-git { # {{{
         read -rN1 -p"$p" ch
     do
         [ "$ch" = $'\n' ] || echo >&2
-        printf '\r'
+        printf '\r\e[K'
         case "${ch}" in
             [h?]) # {{{
                 cat <<- EOF
