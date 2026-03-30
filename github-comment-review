@@ -69,7 +69,7 @@ capture("^\\s*
   (https?://)?github\\.com/
   (?<owner>[^/]+)/
   (?<repo>[^/]+)/
-  pull/
+  (pull|issues)/
   (?<number>[^#/]+)
   \\#(?<kind>discussion_r|issuecomment-)
   (?<id>\\d+)
