@@ -391,10 +391,13 @@ function short-git { # {{{
                 ls_cmd=restore
                 ;;&
             [aR])
-                local file tmp
+                local file tmp first
                 local -A files
                 mapfile -td '' tmp < <(
-                    command git ls-files "${ls_opts[@]}" -z
+                    command git ls-files "${ls_opts[@]}" -z |
+                        awk -vRS=\\0 -vORS=\\0 '{print length()" "$0}' |
+                        sort -znk1,1 |
+                        sed -zE 's/^[0-9]+ +//'
                     printf '%d\0' $?
                 )
                 if [ "${tmp[-1]}" -ne 0 ]; then
@@ -404,14 +407,19 @@ function short-git { # {{{
                     for file in "${tmp[@]::${#tmp[@]}-1}"; do
                         file=./$file
                         files[$file]=2
+                        first=1
                         while [[ $file = */?* ]]; do
                             file=${file%/?*}
-                            ((files[$file]+=1))
+                            [ -n "${files[$file]-$first}" ] && ((files[$file]+=1))
+                            first=''
                         done
                     done
                     for file in "${!files[@]}"; do
                         ((files[$file] <= 1)) && unset "files[$file]"
                     done
+                    if [ ${#files[@]} -gt 1 ]; then
+                        files[.]=2
+                    fi
 
                     local -a sorted_files
                     mapfile -td '' sorted_files < <(\
@@ -423,7 +431,7 @@ function short-git { # {{{
                     PS3="select $ls_cmd target> "
                     qselect "${sorted_files[@]}" &&
                         git -c "$ls_cmd" "$REPLY" # 在之前进行了可重用
-                    unset file files tmp sorted_files
+                    unset file files tmp sorted_files first
                 fi
                 ;;
             c) git -c commit;;
