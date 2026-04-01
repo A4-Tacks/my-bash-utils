@@ -64,16 +64,19 @@ if [ $# -gt 1 ]; then
 fi
 
 shopt -s extglob
+
+per=30
 repo=${repo##?(http?(s)://)?(www.)github.com/}
 
 number=${1:-$(gh pr view --json number | jq .number || exit)}
 repo=${repo:-$(gh repo set-default -v || exit)}
 api=https://api.github.com/repos/$repo/issues/$number/timeline
-[ -n "$page" ] && api+="?page=$page"
+[ -n "$page" ] && api+="?page=$page&per_page=$per"
 
 echo "${api@A}" >&2
 
-"${request[@]}" "$api" | jq -r '
+jq_vars=(--argjson per "$per" --argjson page "${page:-1}")
+"${request[@]}" "$api" | jq -r "${jq_vars[@]}" '
 def elap:
   [
     (now, fromdate)
@@ -111,7 +114,7 @@ def short($n):
   | gsub("( *\r*\n)+"; "  .  ")
   | if length > $n then .[:$n-3]+"..." end;
 
-.[]
+(.[]
 | (to_entries | sort_by(.key | endswith("_url")) | from_entries)
 | (.[] | select(has("login")?)) |= .login
 | .label |= .name?
@@ -137,4 +140,6 @@ def short($n):
   | (.value|@text|rtrim) as $content
   | " • \(.key|fi(12)) : \(if .key | endswith("_url") then $content else $content | short(80) end)"
   )
+),
+(select(length >= $per) | "",csim(7)+"Maybe with more pages, try `-p\($page+1)`?"+csim)
 '
