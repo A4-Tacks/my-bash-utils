@@ -66,9 +66,14 @@ fi
 shopt -s extglob
 
 per=30
-repo=${repo##?(http?(s)://)?(www.)github.com/}
 
+if [[ ${1-} = ?(http?(s)://)?(www.)github.com/* ]]; then
+    repo=${1%/@(pull|issues)/+([0-9])}
+fi
+repo=${repo##?(http?(s)://)?(www.)github.com/}
 number=${1:-$(gh pr view --json number | jq .number || exit)}
+number=${number##*/}
+
 repo=${repo:-$(gh repo set-default -v || exit)}
 api=https://api.github.com/repos/$repo/issues/$number/timeline
 [ -n "$page" ] && api+="?page=$page&per_page=$per"
