@@ -124,7 +124,7 @@ gh api --method $method \
     -H "Accept: application/vnd.github+json" \
     -H "X-GitHub-Api-Version: 2022-11-28" \
     "$api" \
-    -f "body=$body" | jq 'select(.user? // false | not)'
+    -f "body=$body" | jq -r 'if .user? // false then .html_url else . end'
 
 rm "$tmp"
 trap '' exit
