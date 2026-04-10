@@ -263,7 +263,8 @@ function short-git { # {{{
 				    C       switch -c
 				    N       branch --move
 				    X       reset --hard HEAD^
-				    W       whatchanged --graph --oneline
+				    W       shortlog
+				    ^W      shortlog --numbered
 				    space   :eval git
 				    :       :set extra args
 				    -       :append extra optional args
@@ -284,7 +285,6 @@ function short-git { # {{{
 				    D       branch -d
 				    t       reset
 				    T       reset --hard
-				    ^W      whatchanged --graph --oneline
 				EOF
                 ;; # }}}
             H) git -a help;;
@@ -455,8 +455,9 @@ function short-git { # {{{
                 ;;
 
             W)
-                git -a whatchanged --graph --oneline
-                ;;
+                git -a shortlog;;
+            $'\cW')
+                git -a shortlog --numbered;;
 
             ' ')
                 read -erp '$ git ' cmd \
@@ -555,7 +556,7 @@ function short-git { # {{{
                 use_c_refs=1
                 ;;&
             #[L]) ref_pats+=("refs/tags/*" "refs/tags/*/**");;&
-            [rimMtT$'\cW']) ref_pats+=("refs/remotes/*" "refs/remotes/*/**");;&
+            [rimMtT]) ref_pats+=("refs/remotes/*" "refs/remotes/*/**");;&
             [rmM])
                 ref_pats+=(--no-merged HEAD)
                 ;;&
@@ -566,7 +567,7 @@ function short-git { # {{{
                     ref_pats+=(--exclude refs/heads/"$ref")
                 ;;&
             [sDrimM]) use_c_refs=0;;&
-            [tTL$'\cW']) gitf_flags+=b;;&
+            [tTL]) gitf_flags+=b;;&
             s) cmd_args=(switch);;&
             r) cmd_args=(rebase);;&
             i) cmd_args=(rebase -i);;&
@@ -576,8 +577,7 @@ function short-git { # {{{
             D) cmd_args=(branch -d);;&
             t) cmd_args=(reset);;&
             T) cmd_args=(reset --hard);;&
-            $'\cW') cmd_args=(whatchanged --graph --oneline);;&
-            [srimMLDtT$'\cW'])
+            [srimMLDtT])
                 mapfile -t refs < <(
                     command git for-each-ref --format="%(objectname) %(refname:strip=2)" \
                         "${ref_pats[@]}" |
@@ -601,7 +601,7 @@ function short-git { # {{{
                 fi
                 ;;&
 
-            [usrimMLDtTP$'\cP\cW'])
+            [usrimMLDtTP$'\cP'])
                 git -${gitf_flags}a "${cmd_args[@]}" "${cmd_args_post[@]}";;
 
             *) echo $'\a'"Unknown short cmd: ${ch@Q}" >&2;;
