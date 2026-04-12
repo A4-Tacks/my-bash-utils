@@ -109,6 +109,30 @@ case ${EDITOR:-vim} in
 esac
 
 awk 1 << EOF > "$tmp/preset"
+func DiffView()
+    let head = search('^diff', 'bcnW')
+    let end = search('^diff', 'nW')
+    let end = end ? end-1 : '\$'
+    while head != 0 && getline(head) !~ '^-'
+        let head += 1
+    endwhile
+    let afile = fnameescape("diff/".getline(head  )[4:])
+    let bfile = fnameescape("diff/".getline(head+1)[4:])
+    let content = getline(head+2, end)
+
+    exe 'tabnew +set\\ buftype=nofile' afile
+    call setline(1, content)
+    silent g/^+/d
+    silent %s/^[ -]//e
+    diffthis
+
+    exe 'vsp +set\\ buftype=nofile' bfile
+    call setline(1, content)
+    silent g/^-/d
+    silent %s/^[ +]//e
+    exe "norm!\\<c-w>L"
+    diffthis
+endfunc
 func LoadPatchPreset()
     if expand("%") !~? '.*\\.patch\$'
         return
@@ -119,6 +143,7 @@ func LoadPatchPreset()
     nnoremap <buffer> o o<esc>I\\|
     syn match reviewComment /^|.*/ containedin=TOP
     hi def link reviewComment DiffChange
+    com -buffer DiffView call DiffView()
 endfunc
 windo call LoadPatchPreset()
 EOF
