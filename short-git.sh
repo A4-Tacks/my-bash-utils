@@ -338,12 +338,10 @@ function short-git { # {{{
             k)
                 local -a branches sorted_branches exclude_branches
                 read -rd '' -a branches < <(
-                    command git branch -a --format='%(refname:strip=2)' |
-                        grep /
+                    command git branch -r --format='%(refname:strip=2)'
                 )
                 read -rd '' -a exclude_branches < <(
-                    command git for-each-ref --format="-e/%(refname:strip=2)" \
-                        'refs/heads/*' 'refs/heads/*/**'
+                    command git branch --format='-e/%(refname:strip=2)'
                 )
                 mapfile -td '' sorted_branches < <(
                     printf '%q\0' "${branches[@]}" | sort -zu |
