@@ -75,6 +75,7 @@ emoji='{
   "eyes":     "👀",
 }'
 
+# About pull request reviews, blocking: https://github.com/orgs/community/discussions/29018
 api=$(jq -Rrs <<< "$1" '
 sub("\\s*$"; "") |
 capture("^\\s*
