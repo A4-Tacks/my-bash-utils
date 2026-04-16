@@ -245,3 +245,10 @@ retry gh api --method POST \
     jq 'objects.id // .'
 
 accept
+
+if [ "$event" == APPROVE ] &&
+    read -rp 'Merge this pull request?' &&
+    [ -z "$REPLY" ]
+then
+    gh pr merge "$url"
+fi
