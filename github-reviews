@@ -67,9 +67,15 @@ if [ $# -gt 1 ]; then
 fi
 
 shopt -s extglob
+
+if [[ ${1-} = ?(http?(s)://)?(www.)github.com/* ]]; then
+    repo=${1%/@(pull|issues)/+([0-9])}
+fi
+
 repo=${repo##?(http?(s)://)?(www.)github.com/}
 repo=${repo:-$(gh repo set-default -v || exit)}
 id=${1:-$(gh pr view --json number | jq .number || exit)}
+id=${id##*/}
 
 function fail { # {{{
     echo "fail: ${*@Q}" >&2
