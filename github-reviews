@@ -223,7 +223,7 @@ def meta:
     ,csim(31)+"-\(.deletions)"
     ,"(\(.changed_files) files)"
     ,(select(.mergeable_state == "dirty") | csim(1)+"mergeable:\(csim(22,33))dirty")
-    ,(select(.auto_merge) | csim(1)+"automerge:\(.auto_merge)")
+    ,(select(.auto_merge) | csim(1)+"automerge:on")
     ,"branch:"+.head.ref]
   | join(csim+" ")+csim
   ;
