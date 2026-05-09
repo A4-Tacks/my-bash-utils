@@ -1,0 +1,102 @@
+#!/usr/bin/bash
+set -o nounset
+set -o errtrace
+#set -o pipefail
+function CATCH_ERROR { # {{{
+    local __LEC=$? __i __j
+    set +x
+    echo "Traceback (most recent call last):" >&2
+    for ((__i = ${#FUNCNAME[@]} - 1; __i >= 0; --__i)); do
+        printf '  File %q line %s in %q\n' >&2 \
+            "${BASH_SOURCE[__i]}" \
+            "${BASH_LINENO[__i]}" \
+            "${FUNCNAME[__i]}"
+        if ((BASH_LINENO[__i])) && [ -f "${BASH_SOURCE[__i]}" ]; then
+            for ((__j = 0; __j < BASH_LINENO[__i]; ++__j)); do
+                read -r REPLY
+            done < "${BASH_SOURCE[__i]}"
+            printf '    %s\n' "$REPLY" >&2
+        fi
+    done
+    echo "Error: [ExitCode: ${__LEC}]" >&2
+    exit "${__LEC}"
+}
+trap CATCH_ERROR ERR # }}}
+
+jq_defines='
+def ratio: "\(.*10000|round|./100)%";
+def items(g): values|map(g)|join(", ");
+def elap:
+  [
+    (now, fromdate)
+    | strftime("%s")
+    | tonumber
+  ]
+  | first-last
+  | [
+      ., (
+        ./60 | ., (
+          ./60 | ., (
+            ./24 | ., (
+              ./30.4375 | ., (
+                ./12)))))
+      | floor
+    ]
+  | [" seconds", " minutes", " hours", " days", " month", " years"] as $label
+  | last(to_entries[]
+    | [.value, $label[.key]]
+    | select(first > 1)
+    | join("")
+  )
+  ;
+def numfmt:
+  [
+      ., (
+        ./1024 | ., (
+          ./1024 | ., (
+            ./1024 | ., (
+              ./1024 | ., (
+                ./1024)))))
+      | floor
+    ]
+  | [" KiB", " MiB", " GiB", " TiB"] as $label
+  | last(to_entries[]
+    | [.value, $label[.key]]
+    | select(first > 1)
+    | join("")
+  )
+  ;
+'
+handlers=(
+    nameWithOwner:'.'
+    archivedAt:'select(.)|$k+elap'
+    visibility:'select(.!="PUBLIC")|$k+@text'
+    description:'"desc: "+@text'
+    defaultBranchRef:'"HEAD -> "+.name'
+    licenseInfo:'$k+.key'
+    stargazerCount:'@text+" stars"'
+    issues:'"\(.totalCount) issues"'
+    pullRequests:'"\(.totalCount) pull requests"'
+    forkCount:'@text+" forks"'
+    repositoryTopics:'"topics: "+items(.name)'
+    isTemplate:'select(.)|$k'
+    diskUsage:'$k+numfmt'
+    latestRelease:'select(.name)|$k+"\(.name) [\(.tagName)]"'
+    languages:'sort_by(-.size)|(map(.size)|add) as $sum|$k+items("\(.node.name) \(.size/$sum|ratio)")'
+    pushedAt:'$k+elap'
+    updatedAt:'$k+elap'
+    homepageUrl:'select(length>0)|$k+@text'
+    isFork:'select(.)|$k'
+)
+gh_opts=()
+jq_handlers='empty'
+for k in "${!handlers[@]}"; do
+    attr=${handlers[$k]}
+    key=${attr%%:*}
+    handler=${attr#*:}
+    gh_opts+=(--json "$key")
+    if [ "$key" = nameWithOwner ]; then p='""'; else p='"• "'; fi
+    jq_handlers+=",(\"$key: \" as \$k|.$key|($handler)|$p+@text)"
+done
+
+gh repo view "${gh_opts[@]}" "$@" | jq -r "$jq_defines $jq_handlers"
