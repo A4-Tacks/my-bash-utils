@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 set -o nounset
 set -o errtrace
-#set -o pipefail
+set -o pipefail
 function CATCH_ERROR { # {{{
     local __LEC=$? __i __j
     set +x
@@ -99,4 +99,4 @@ for k in "${!handlers[@]}"; do
     jq_handlers+=",(\"$key: \" as \$k|.$key|($handler)|$p+@text)"
 done
 
-gh repo view "${gh_opts[@]}" "$@" | jq -r "$jq_defines $jq_handlers"
+gh repo view "${gh_opts[@]}" "$@" | jq -r "$jq_defines $jq_handlers" || exit
