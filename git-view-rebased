@@ -1,0 +1,69 @@
+#!/usr/bin/bash
+set -o nounset
+set -o errtrace
+set -o pipefail
+function CATCH_ERROR { # {{{
+    local __LEC=$? __i __j
+    set +x
+    echo "Traceback (most recent call last):" >&2
+    for ((__i = ${#FUNCNAME[@]} - 1; __i >= 0; --__i)); do
+        printf '  File %q line %s in %q\n' >&2 \
+            "${BASH_SOURCE[__i]}" \
+            "${BASH_LINENO[__i]}" \
+            "${FUNCNAME[__i]}"
+        if ((BASH_LINENO[__i])) && [ -f "${BASH_SOURCE[__i]}" ]; then
+            for ((__j = 0; __j < BASH_LINENO[__i]; ++__j)); do
+                read -r REPLY
+            done < "${BASH_SOURCE[__i]}"
+            printf '    %s\n' "$REPLY" >&2
+        fi
+    done
+    echo "Error: [ExitCode: ${__LEC}]" >&2
+    exit "${__LEC}"
+}
+trap CATCH_ERROR ERR # }}}
+
+hash git diff mktemp rm vim
+
+function short { # {{{
+    git rev-parse --short "$1"
+} # }}}
+function is_share { # {{{
+    local count
+    count=$(git branch -a --contains "$1" --format='%(refname:strip=1)' | grep ^remotes -c)
+    [ "$count" -gt 1 ]
+} # }}}
+
+upstream=$(short '@{upstream}') || exit
+tmp=$(mktemp -d git-view-rebased.XXXXXXXXXX --tmpdir)
+trap 'rm -r "$tmp"' exit
+
+if [ "$(short HEAD)" = "$upstream" ]; then
+    echo >&2 "${0##*/}: HEAD == upstream"
+    exit 1
+fi
+
+for commit_count in {0..99}; do
+    base=$upstream~$commit_count
+    is_share "$base" && break
+done
+
+if [ "$base" = "$upstream~0" ]; then
+    echo >&2 "${0##*/}: cannot view empty commits"
+    exit 1
+fi
+
+remote="$base..$upstream"
+current="HEAD~$commit_count..HEAD"
+
+if ! diff -u8 --color=auto \
+    <(git log --format=format:%s "$remote") \
+    <(git log --format=format:%s "$current")
+then
+    echo >&2 "${0##*/}: rebased subjects mismatched"
+    exit 1
+fi
+
+git show "$remote" > "$tmp/remote"
+git show "$current" > "$tmp/current"
+vim -d "$tmp/remote" "$tmp/current"
