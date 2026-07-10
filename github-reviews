@@ -66,6 +66,7 @@ if [ $# -gt 1 ]; then
     exit 2
 fi
 
+hash gh curl jq
 shopt -s extglob
 
 if [[ ${1-} = ?(http?(s)://)?(www.)github.com/* ]]; then
@@ -82,7 +83,10 @@ function fail { # {{{
     return 1
 } # }}}
 
-hash gh curl jq
+if [ -z "$repo" ]; then
+    printf '%q: unknown repo\n' "$0" >&2
+    exit 1
+fi
 
 api=(https://api.github.com/repos/$repo/{issues/$id/comments,pulls/$id{,/comments,/reviews}})
 
