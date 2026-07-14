@@ -88,16 +88,7 @@ def elap:
     | strftime("%s")
     | tonumber
   ]
-  | first-last
-  | [
-      ., (
-        ./60 | ., (
-          ./60 | ., (
-            ./24 | ., (
-              ./30.4375 | ., (
-                ./12)))))
-      | floor
-    ]
+  | [foreach (1, 60, 60, 24, 30.4375, 12) as $d (first-last; ./$d|floor)]
   | [" seconds", " minutes", "h", "d", " months", " years"] as $label
   | last(to_entries[]
     | [.value, $label[.key]]
