@@ -109,6 +109,11 @@ def short($n):
   gsub("^(>.*( *\r*\n)+)+"; "")
   | gsub("( *\r*\n)+"; "  .  ")
   | if length > $n then .[:$n-3]+"..." end;
+def p_event($event):
+  if $event == "Committed" then
+    csim(32)+.+csim(39)
+  end
+  ;
 
 (.[]
 | (to_entries | sort_by(.key | endswith("_url")) | from_entries)
@@ -128,7 +133,7 @@ def short($n):
   . as[$actor, $created_at, $updated_at, $event] |
        ($updated_at | " update at "+values // "") as $update |
        "",
-       csim(1)+"\($actor | fi(30))\($event|fi(27)) • \($created_at+$update)"+csim)
+       csim(1)+"\($actor | fi(30))\($event|fi(27)|p_event($event)) • \($created_at+$update)"+csim)
 | strings,
   (objects | select(length != 0) | ""),
   (objects
