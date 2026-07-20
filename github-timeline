@@ -124,6 +124,7 @@ def p_event($event):
 | default_to(.actor; .user, .committer.name)
 | default_to(.created_at; .updated_at)
 | del(.url, .node_id, .id, .reactions, .author_association, ._links, .rename, .source)
+| del(.performed_via_github_app)
 | del(.sha, .author, .committer, .tree, .parents, .verification)
 | map_values(values)
 | (.[] | strings) |= select(test("^https?://api\\.github\\.com") | not)
