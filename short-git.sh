@@ -261,6 +261,7 @@ function short-git { # {{{
 				    B       reset --soft HEAD^ && commit --amend
 				    ^B      :squash like HEAD and HEAD^
 				    ^V      :swap like HEAD and HEAD^
+				    V       :swap like HEAD^ and HEAD^^
 				    C       switch -c
 				    N       branch --move
 				    X       reset --hard HEAD^
@@ -453,6 +454,9 @@ function short-git { # {{{
             $'\cV') git -g sequence.editor='sed -i "1{h;d};2{p;g}"' \
                         -g advice.waitingForEditor=false \
                         -c rebase -i HEAD^^;;
+            V) git -g sequence.editor='sed -i "1{h;d};2{p;g}"' \
+                        -g advice.waitingForEditor=false \
+                        -c rebase -i HEAD^^^;;
             C)  read -erp 'git switch -c ' ref && git -a switch -c "$ref";;
             N)  read -erp 'git branch -m ' -i "$(command git branch --show-current)" ref \
                     && git -a branch -m "$ref";;
