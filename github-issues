@@ -33,9 +33,28 @@ else
     cols=999
 fi
 
-retry gh issue list "${json_options[@]}" "$@" |
+verbose=false
+gh_args=()
+for arg; do
+    case "$arg" in
+        -v) verbose=true;;
+        -h|--help)
+            printf 'Usage: %q [Options]\n' "${0##*/}"
+            echo 'Show more clean issues list'
+            echo
+            printf '%s\n' \
+                'Options:' \
+                '    -v                 verbose output table' \
+                '    -h                 show help' \
+                && exit
+            ;;
+        *) gh_args+=("$arg");;
+    esac
+done
+
+retry gh issue list "${json_options[@]}" "${gh_args[@]}" |
 #< result \
-    jq -sRr --argjson col "$cols" '
+    jq -sRr --argjson col "$cols" --argjson verbose $verbose '
 fromjson? // halt_error(1) |
 "│ " as $L |
 def fi($n): tostring | .+" "*($n-length);
@@ -66,26 +85,31 @@ def state:
   end
   ;
 def rcomments:
-  .author.login as $author |
+  .author as $author |
   .comments |
-  if length < 2 then map(select(.author.login != $author)) end;
+  if length < 2 then map(select(.author != $author)) end;
 def say: rcomments | length | "^"+@text | if .[1:] == "0" then "" end;
 def counter(f): reduce f as $i ({}; .[$i] += 1);
+def ON($flag): if $flag | not then "" end;
 .[].labels[].name |= if test(" ") then "\u0027\(.)\u0027" end |
 counter(.[].labels[].name) as $labels |
 length as $len |
 .[].labels |= map(select($len <= 1 or $labels[.name] != $len)) |
 .[] |= (.number |= @text
        |.labels |= (map(.name) | sort_by([-$labels[.], .]) | join(" ") | short(30))
+       |.author |= .login
        |.meta = (.createdAt | elap)+say
        ) |
 (map(.number | length+1) | max) as $numlen |
 (map(.labels | length+1) | max) as $lablen |
+(map(.author | length+1) | max) as $autlen |
 (map(.meta | length+1) | max) as $metalen |
 .[] |
 state
   +(.number | fi($numlen))
   +(.labels | fi($lablen))
-  +$L+"\(.meta|fi($metalen))"+$L+.title |
+  +($L+"\(.author|fi($autlen))" | ON($verbose))
+  +$L+"\(.meta|fi($metalen))"
+  +$L+.title |
 short($col)
 '
