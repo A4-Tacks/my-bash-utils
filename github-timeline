@@ -47,7 +47,7 @@ esac || getopts haR:p: opt; do case "$opt" in
             '    -R <repo>          target repo' \
             '    -p <page>          set show page' \
             '    -h                 show help' \
-            && exit
+            ; exit
         ;;
     a) request=(gh api);;
     R) repo=$OPTARG;;

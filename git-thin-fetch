@@ -39,7 +39,7 @@ while getopts ho: opt; do case "$opt" in
             'Options:' \
             '    -o <origin>        origin, default is current upstream' \
             '    -h                 show help' \
-            && exit
+            ; exit
         ;;
     o) origin=$OPTARG;;
     :|\?)

@@ -59,7 +59,7 @@ esac || getopts hHpr:cd:l opt; do case "$opt" in
             '    -l                 list files' \
             '    -h                 show help' \
             '    -H                 show bash complete script' \
-            && exit
+            ; exit
         ;;
     H)  cat << "EOF"
 function _comp_quick-rs { # {{{

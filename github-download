@@ -40,7 +40,7 @@ esac || getopts hR:D: opt; do case "$opt" in
             '    -D <dir>           output directory' \
             '    -R <repo>          target repo' \
             '    -h                 show help' \
-            && exit
+            ; exit
         ;;
     R) args+=(-R "$OPTARG");;
     D) output=$OPTARG;;

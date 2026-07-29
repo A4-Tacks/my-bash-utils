@@ -38,7 +38,7 @@ esac || getopts hp: opt; do case "$opt" in
             'Options:' \
             '    -p <N>             diff N of parents' \
             '    -h                 show help' \
-            && exit
+            ; exit
         ;;
     p) parent=$OPTARG;;
     :|\?)

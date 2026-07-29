@@ -52,7 +52,7 @@ esac || getopts haR: opt; do case "$opt" in
             'Options:' \
             '    -a                 try using GH_TOKEN' \
             '    -h                 show help' \
-            && exit
+            ; exit
         ;;
     :|\?)
         ((--OPTIND <= 0)) && OPTIND=1

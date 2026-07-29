@@ -39,7 +39,7 @@ esac || getopts hf opt; do case "$opt" in
             'Options:' \
             '    -f FILE            output file' \
             '    -h                 show help' \
-            && exit
+            ; exit
         ;;
     f)
         file=$OPTARG

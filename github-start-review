@@ -53,7 +53,7 @@ esac || getopts hd opt; do case "$opt" in
             'Options:' \
             '    -d                 diff old reviewed patch' \
             '    -h                 show help' \
-            && exit
+            ; exit
         ;;
     d) diff_old=1;;
     :|\?)

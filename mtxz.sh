@@ -23,7 +23,7 @@ esac || getopts hkT:0123456789 opt; do case "$opt" in
             '    -T                 threads number' \
             '    -k                 keep remove origin file' \
             '    -h                 show help' \
-            && exit
+            ; exit
         ;;
     T) threads=$OPTARG;;
     k) keep=1;;

@@ -29,7 +29,7 @@ while getopts aAI:i:f:eh opt; do case "$opt" in
             '    -f <file>          stdin from file' \
             '    -e                 empty new line' \
             '    -h                 show help' \
-            && exit
+            ; exit
         ;;
     :|\?)
         ((--OPTIND <= 0)) && OPTIND=1

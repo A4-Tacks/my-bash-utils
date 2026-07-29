@@ -51,7 +51,7 @@ while getopts ht:T:H:n: opt; do case "$opt" in
             '    -H <hasher>        set hasher' \
             '    -n <name>          set bin name' \
             '    -h                 show help' \
-            && exit
+            ; exit
         ;;
     t)
         COMPILE_TARGET=$OPTARG

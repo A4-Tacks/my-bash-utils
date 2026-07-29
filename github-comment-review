@@ -43,7 +43,7 @@ esac || getopts h-f:u opt; do case "$opt" in
             '    -f <file>          comment body from file' \
             '    -u                 update a review or issue comment' \
             '    -h                 show help' \
-            && exit
+            ; exit
         ;;
     f) body_file=$OPTARG;;
     u) method=PATCH;;

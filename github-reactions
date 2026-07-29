@@ -38,7 +38,7 @@ esac || getopts hs opt; do case "$opt" in
             'Options:' \
             '    -s                 send mode' \
             '    -h                 show help' \
-            && exit
+            ; exit
         ;;
     s) mode=POST;;
     :|\?)

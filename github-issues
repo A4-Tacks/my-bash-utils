@@ -46,7 +46,7 @@ for arg; do
                 'Options:' \
                 '    -v                 verbose output table' \
                 '    -h                 show help' \
-                && exit
+                ; exit
             ;;
         *) gh_args+=("$arg");;
     esac
