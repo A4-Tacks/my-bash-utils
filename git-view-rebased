@@ -38,6 +38,8 @@ upstream=$(short '@{upstream}') || exit
 tmp=$(mktemp -d git-view-rebased.XXXXXXXXXX --tmpdir)
 trap 'rm -r "$tmp"' exit
 
+test $# = 0
+
 if [ "$(short HEAD)" = "$upstream" ]; then
     echo >&2 "${0##*/}: HEAD == upstream"
     exit 1
@@ -55,6 +57,9 @@ fi
 
 remote="$base..$upstream"
 current="HEAD~$commit_count..HEAD"
+
+echo "${remote@A}" >&2
+echo "${current@A}" >&2
 
 if ! diff -u8 --color=auto \
     <(git log --format=format:%s "$remote") \
