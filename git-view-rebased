@@ -30,6 +30,9 @@ function short { # {{{
 } # }}}
 function is_share { # {{{
     local count
+    if git show "$1" --no-patch --format=format:%p | grep -q ' '; then
+        return
+    fi
     count=$(git branch -a --contains "$1" --format='%(refname:strip=1)' | grep ^remotes -c)
     [ "$count" -gt 1 ]
 } # }}}
