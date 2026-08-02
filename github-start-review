@@ -224,9 +224,6 @@ case "$REPLY" in
     *) accept; exit
 esac
 
-cp "$tmp/raw.patch" "$current_cache"
-gzip --quiet "$current_cache"
-
 PS3="--> Select review state: "
 select event in COMMENT REQUEST_CHANGES APPROVE PENDING; do
     test -n "$event" && break
@@ -243,6 +240,9 @@ retry gh api --method POST \
     --input "$tmp/payload" \
     "$api" |
     jq 'objects.id // .'
+
+cp "$tmp/raw.patch" "$current_cache"
+gzip --quiet "$current_cache"
 
 accept
 
