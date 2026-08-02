@@ -190,6 +190,11 @@ def clean:
     rtrim
   end
   ;
+def split_replie_chunks:
+  reduce .[] as $value ({};
+    .[$value | .rid // .id | tostring] += [$value]
+  )[]
+  ;
 def association:
   if .author_association and .author_association != "NONE" then
     " (\(.author_association|title))"
@@ -229,6 +234,8 @@ def meta:
 "\u0000topLevel" as $top |
 reduce (inputs | pull_body_pack | expected("array"))[] as $review ({};
   .[$review.diff_hunk // $top] += [$review | {
+    id,
+    rid: .in_reply_to_id,
     user: .user.login,
     body,
     created_at: (.created_at // .submitted_at // "9999-12-31T23:59:59Z"),
@@ -251,6 +258,7 @@ reduce (inputs | pull_body_pack | expected("array"))[] as $review ({};
 | .[][].body |= clean
 | to_entries
 | map(if .key == $top then .value = (.value[] | select(.state != "COMMENTED" or bool(.body)) | [.]) end)
+| map(.value = (.value | split_replie_chunks))
 | sort_by(.value| if $recent then last else first end | [(.created_at | fromdate), .state])[]
 |
 ( (.value[0].path | values | "", .)
