@@ -32,7 +32,7 @@ while case "${!OPTIND---}" in
     *)  args+=("${!OPTIND}"); ((++OPTIND)); continue
 esac || getopts hs opt; do case "$opt" in
     h)
-        printf 'Usage: %q [Options] <comment_url>\n' "${0##*/}"
+        printf 'Usage: %q [Options] <comment_url|issue_number>\n' "${0##*/}"
         echo
         printf '%s\n' \
             'Options:' \
@@ -57,11 +57,17 @@ if [ $# -ne 1 ]; then
     exit 2
 fi
 
+hash gh jq
+
 function retry { # {{{
     for _ in {1..5}; do
         "$@" && return
     done
 } # }}}
+
+if [[ $1 =~ ^[0-9]+$ ]]; then
+    set -- "$(retry gh issue view --json url "$1" | jq -r .url)"
+fi
 
 # shellcheck disable=2089
 emoji='{
