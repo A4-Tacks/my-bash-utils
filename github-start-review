@@ -239,7 +239,7 @@ retry gh api --method POST \
     -H "X-GitHub-Api-Version: 2022-11-28" \
     --input "$tmp/payload" \
     "$api" |
-    jq 'objects.id // .'
+    jq -r 'objects.html_url // .'
 
 cp "$tmp/raw.patch" "$current_cache"
 gzip --quiet "$current_cache"
