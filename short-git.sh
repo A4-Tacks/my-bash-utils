@@ -307,7 +307,7 @@ function short-git { # {{{
                         ref=$(command git branch --show-current) &&
                         git -a switch - &&
                         read -N1 -rp "==> Delete branch ${ref@Q}? [Y/n] " REPLY &&
-                        [[ "$REPLY" = [Yy] ]] && echo &&
+                        [[ "$REPLY" = [Yy$'\n'] ]] && echo &&
                         git -a branch -D "$ref"
                 fi
                 ;;
