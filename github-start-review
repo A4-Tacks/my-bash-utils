@@ -247,6 +247,8 @@ gzip --quiet "$current_cache"
 accept
 
 if [ "$event" == APPROVE ] &&
+    echo "Start:  $commit_id" &&
+    echo "Finish: $(retry gh pr view --json commits | jq '.commits[-1].oid' -r)" &&
     read -rp 'Merge this pull request?' &&
     [ -z "$REPLY" ]
 then
