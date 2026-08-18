@@ -41,17 +41,27 @@ upstream=$(short '@{upstream}') || exit
 tmp=$(mktemp -d git-view-rebased.XXXXXXXXXX --tmpdir)
 trap 'rm -r "$tmp"' exit
 
-test $# = 0
+for arg; do
+    if [ "$arg" = -h ] || [ "$arg" = --help ]; then
+        printf 'Usage: %q [-h] [depth]\n' "${0##*/}"
+        exit
+    fi
+done
+
+test $# = 0 || test $# = 1
 
 if [ "$(short HEAD)" = "$upstream" ]; then
     echo >&2 "${0##*/}: HEAD == upstream"
     exit 1
 fi
 
-for commit_count in {0..99}; do
+if [ -n "${1-}" ]; then
+    commit_count=$1
+    base=$upstream~$commit_count
+else for commit_count in {0..99}; do
     base=$upstream~$commit_count
     is_share "$base" && break
-done
+done fi
 
 if [ "$base" = "$upstream~0" ]; then
     echo >&2 "${0##*/}: cannot view empty commits"
