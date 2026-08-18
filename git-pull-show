@@ -1,0 +1,37 @@
+#!/bin/bash
+set -e
+
+origin=''
+
+if [ $# -gt 1 ]; then
+    origin=$1
+    shift
+fi
+
+ref=${1:?expected a git ref}
+shift
+
+if [ $# -ne 0 ]; then
+    printf '%q: unexpected arg %q\n' "$0" "$1" >&2
+    exit 2
+fi
+
+if [ "$ref" = -h ] || [ "$ref" = --help ]; then
+    printf 'Usage: %s [origin] <ref>\n' "${0##*/}"
+    echo 'Pull and show ref'
+    exit
+fi
+
+if [ -z "$origin" ]; then
+    origin=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}')
+    origin=${origin%%/*}
+fi
+
+function run { # {{{
+    echo "==> ${*@Q}"
+    "$@"
+} # }}}
+
+git merge-base --is-ancestor 2>&- "$ref^" "$ref" ||
+    run git fetch "$origin" "$ref" --depth=2
+run git show "$ref"
