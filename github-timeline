@@ -121,7 +121,7 @@ def p_event($event):
 | .label |= .name?
 | . + .rename + ((.source[]? | pick(.title, .number, .html_url)?) // null)
 | default_to(.created_at; .submitted_at, .committer.date)
-| default_to(.actor; .user, .committer.name)
+| default_to(.actor; .user, .committer.name, .source.issue.user.login)
 | default_to(.created_at; .updated_at)
 | del(.url, .node_id, .id, .reactions, .author_association, ._links, .rename, .source)
 | del(.performed_via_github_app)
