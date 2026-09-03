@@ -154,7 +154,7 @@ cp "$tmp/raw.patch" "$tmp/diff.patch"
 run "${EDITOR:-vim}"    "$tmp/diff.patch" "${cfg[@]}"
 
 (diff -u0 "$tmp/raw.patch" "$tmp/diff.patch" || :) |
-    awk '/^@/{p=$0}p&&/^+[^|]|^-/{print p;print"Invalid line: "$0;exit 1}' || exit
+    awk '/^@/{p=$0}p&&/^[+][^|]|^-/{print p;print"Invalid line: "$0;exit 1}' || exit
 
 run "${EDITOR:-vim}"    "$tmp/body.md"
 
