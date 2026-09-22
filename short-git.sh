@@ -36,8 +36,8 @@ function code { # {{{
 
 function no_gpg { # {{{
     local stat
-    stat=$(command git show --format=format:%G\? --no-patch "$1") &&
-        [ "$stat" = N ]
+    stat=$(command git show --format=format:%G\? --no-patch "$@") &&
+        [[ $stat != *[A-MO-Z]* ]]
 } # }}}
 
 function fmt_args { # {{{
@@ -442,10 +442,10 @@ function short-git { # {{{
             c) git -c commit;;
             b) git -a commit -anm TODO --no-gpg-sign --branch;;
             B)  local sign=()
-                no_gpg HEAD && no_gpg HEAD^ && sign=(--no-gpg-sign)
-                git -g sequence.editor='sed -i 2s/^pick/fixup/' \
-                    -g advice.waitingForEditor=false \
-                    -c rebase -i HEAD^^ "${sign[@]}";;
+                no_gpg HEAD HEAD^ && sign=(--no-gpg-sign)
+                command git rebase --quiet HEAD --no-gpg-sign && # check
+                    git -a reset --soft HEAD^ --no-refresh &&
+                    git -a commit "${sign[@]}" --amend --no-edit --quiet;;
             $'\cB') git -g sequence.editor='sed -i 2s/^pick/squash/' \
                         -g advice.waitingForEditor=false \
                         -g commit.cleanup=verbatim \
