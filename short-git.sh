@@ -287,6 +287,8 @@ function short-git { # {{{
 				    D       branch -d
 				    t       reset
 				    T       reset --hard
+				extra preset:
+				    ${GIT_PRESET[*]@Q}
 				EOF
                 ;; # }}}
             H) git -a help;;
