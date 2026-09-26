@@ -45,17 +45,19 @@ OPTIND=1
 while case "${!OPTIND---}" in
     -*?)false;;
     *)  args+=("${!OPTIND}"); ((++OPTIND)); continue
-esac || getopts hd opt; do case "$opt" in
+esac || getopts hdR: opt; do case "$opt" in
     h)
         printf 'Usage: %q [Options]\n' "${0##*/}"
         echo
         printf '%s\n' \
             'Options:' \
             '    -d                 diff old reviewed patch' \
+            '    -R <repo>          select repo' \
             '    -h                 show help' \
             ; exit
         ;;
     d) diff_old=1;;
+    R) args+=(-R "$OPTARG");;
     :|\?)
         ((--OPTIND <= 0)) && OPTIND=1
         printf '%q: parse args failed, near by %q\n' "$0" "${!OPTIND}" >&2
