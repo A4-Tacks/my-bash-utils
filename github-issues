@@ -103,7 +103,7 @@ length as $len |
 (map(.meta | length+1) | max) as $metalen |
 (map(.state | length) | max) as $statelen |
 .[] |
-(.state | fi($statelen))
+(.state | fi([$statelen,1]|max))
   +(.number | fi($numlen))
   +(.labels | fi($lablen))
   +($L+"\(.author|fi($autlen))" | ON($verbose))
