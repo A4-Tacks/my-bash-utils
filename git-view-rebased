@@ -75,8 +75,8 @@ echo "${remote@A}" >&2
 echo "${current@A}" >&2
 
 if ! diff -u8 --color=auto \
-    <(git log --format=format:%s "$current") \
-    <(git log --format=format:%s "$remote")
+    <(git log --format=format:%s "$remote") \
+    <(git log --format=format:%s "$current")
 then
     echo >&2 "${0##*/}: rebased subjects mismatched"
     exit 1
@@ -84,4 +84,4 @@ fi
 
 git show "$remote" > "$tmp/remote"
 git show "$current" > "$tmp/current"
-vim -d "$tmp/remote" "$tmp/current"
+vim -d "$tmp/current" "$tmp/remote"
