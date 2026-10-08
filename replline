@@ -70,7 +70,7 @@ while printf '\e[1m' >&2
     read -rep "$prompt" -i "$REPLY"
 do
     printf '\e[m' >&2
-    [ "$prev" != "$REPLY" ] && history -s -- "$REPLY"
+    [ "$prev" != "$REPLY" ] && [ -n "$REPLY" ] && history -s -- "$REPLY"
     prev=$REPLY
     input=$prelude$REPLY
 
