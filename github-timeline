@@ -33,23 +33,26 @@ request=(
 args=()
 page=''
 repo=''
+verbose=false
 OPTIND=1
 while case "${!OPTIND---}" in
     -*?)false;;
     *)  args+=("${!OPTIND}"); ((++OPTIND)); continue
-esac || getopts haR:p: opt; do case "$opt" in
+esac || getopts havR:p: opt; do case "$opt" in
     h)
         printf 'Usage: %q [Options] [number]\n' "${0##*/}"
         echo
         printf '%s\n' \
             'Options:' \
             '    -a                 try using GH_TOKEN' \
+            '    -v                 verbose mode' \
             '    -R <repo>          target repo' \
             '    -p <page>          set show page' \
             '    -h                 show help' \
             ; exit
         ;;
     a) request=(gh api);;
+    v) verbose=true;;
     R) repo=$OPTARG;;
     p) page=$OPTARG;;
     :|\?)
@@ -80,7 +83,7 @@ api=https://api.github.com/repos/$repo/issues/$number/timeline
 
 echo "${api@A}" >&2
 
-jq_vars=(--argjson per "$per" --argjson page "${page:-1}")
+jq_vars=(--argjson per "$per" --argjson page "${page:-1}" --argjson verbose "$verbose")
 "${request[@]}" "$api" | jq -r "${jq_vars[@]}" '
 def elap:
   [
@@ -105,10 +108,14 @@ def take(path; do): objects | ([path] | do), del(path);
 def default_to(prefer; norm):
   if isempty(prefer | values) then prefer = (first(norm | values) // null) end
   | if any(prefer == norm; .) then del(norm) end;
-def short($n):
-  gsub("^(>.*( *\r*\n)+)+"; "")
-  | gsub("( *\r*\n)+"; "  .  ")
-  | if length > $n then .[:$n-3]+"..." end;
+def short($n;$ind):
+  if $verbose then
+    gsub("( *\r*\n)+"; "\n"+" "*$ind)
+  else
+    gsub("^(>.*( *\r*\n)+)+"; "")
+    | gsub("( *\r*\n)+"; "  .  ")
+    | if length > $n then .[:$n-3]+"..." end
+  end;
 def p_event($event):
   if $event == "Committed" then
     csim(32)+.+csim(39)
@@ -140,7 +147,7 @@ def p_event($event):
   (objects
   | to_entries[]
   | (.value|@text|rtrim) as $content
-  | " • \(.key|fi(12)) : \(if .key | endswith("_url") then $content else $content | short(80) end)"
+  | " • \(.key|fi(12)) : \(if .key | endswith("_url") then $content else $content | short(80;18) end)"
   )
 ),
 (select(length >= $per) | "",csim(7)+"Maybe with more pages, try `-p\($page+1)`?"+csim)
