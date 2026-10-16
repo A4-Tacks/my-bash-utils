@@ -24,6 +24,7 @@ git scripts
 -------------------------------------------------------------------------------
 - git-shallow: Quickly add a grafted commit (which may disrupt the unshallow)
 - git-fc: Using a short reference to fetch a local commit
+- git-trim-branch: Delete branches with interactive
 - git-showtool: A `git difftool commit^ commit` wrapper
 - git-pretty-graph: git log pager, improve graph lines
 

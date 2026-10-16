@@ -1,0 +1,88 @@
+#!/usr/bin/bash
+set -o nounset
+set -o errtrace
+#set -o pipefail
+function CATCH_ERROR { # {{{
+    local __LEC=$? __i __j
+    set +x
+    echo "Traceback (most recent call last):" >&2
+    for ((__i = ${#FUNCNAME[@]} - 1; __i >= 0; --__i)); do
+        printf '  File %q line %s in %q\n' >&2 \
+            "${BASH_SOURCE[__i]}" \
+            "${BASH_LINENO[__i]}" \
+            "${FUNCNAME[__i]}"
+        if ((BASH_LINENO[__i])) && [ -f "${BASH_SOURCE[__i]}" ]; then
+            for ((__j = 0; __j < BASH_LINENO[__i]; ++__j)); do
+                read -r REPLY
+            done < "${BASH_SOURCE[__i]}"
+            printf '    %s\n' "$REPLY" >&2
+        fi
+    done
+    echo "Error: [ExitCode: ${__LEC}]" >&2
+    exit "${__LEC}"
+}
+trap CATCH_ERROR ERR # }}}
+
+OPTIND=1
+while getopts h- opt; do case "$opt" in
+    h|-)
+        printf 'Usage: %q [Options]\n' "${0##*/}"
+        echo 'Delete branches with interactive'
+        echo
+        printf '%s\n' \
+            'Options:' \
+            '    -h                 show help' \
+            ; exit
+        ;;
+    :|\?)
+        ((--OPTIND <= 0)) && OPTIND=1
+        printf '%q: parse args failed, near by %q\n' "$0" "${!OPTIND}" >&2
+        exit 2
+esac done
+set -- "${@:OPTIND}"
+if [ $# -ne 0 ]; then
+    printf '%q: unexpected arg %q\n' "$0" "$1" >&2
+    exit 2
+fi
+
+
+HELP="\
+y   delete this branch
+n   skip this branch
+q   quit to script
+a   delete this and all rest branches
+s   show branch patches
+l   show branch log
+b   back to prev branch
+"
+all=''
+mapfile -t branches < <(
+    git branch --sort='committerdate'
+)
+for ((i = 0; i < ${#branches[*]}; ++i)); do branch=${branches[i]}; case "$branch" in
+    '  '*)
+        branch=${branch#  }
+        if test -n "$all"; then
+            git branch -d "$branch"
+            continue
+        fi
+        until
+            read -rN1 -p "Delete branch ${branch@Q} [y,n,q,a,s,l,b,?]?" ch || ch=q
+            printf '\r\e[K'
+            case "$ch" in
+                a) all=1;&
+                y) git branch -d "$branch";;
+                n);;
+                s) git show "$branch" && false;;
+                l) git log --graph "$branch" && false;;
+                b) ((i -= 2, i<0&&(i=-1))); continue 2;;
+                q) exit;;
+                '?') echo "$HELP"; false;;
+                *) echo "Unknown quick input: ${ch@Q}, try input '?'"; false;;
+            esac
+        do
+            :
+        done
+        ;;
+    *) echo "Skipped special branch ${branch@Q}";;
+esac done
