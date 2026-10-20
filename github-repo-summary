@@ -76,6 +76,7 @@ handlers=(
     languages:'sort_by(-.size)|(map(.size)|add) as $sum|$k+items("\(.node.name) \(.size/$sum|ratio)")'
     pushedAt:'$k+elap'
     updatedAt:'$k+elap'
+    createdAt:'$k+elap'
     homepageUrl:'select(length>0)|$k+@text'
     isFork:'select(.)|$k'
 )
