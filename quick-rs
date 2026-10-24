@@ -111,6 +111,7 @@ if [ -n "$clean" ]; then
     for file in "$bin"/*; do
         file_text=$(< "$file")
         test "$file_text" = "$default" && run rm -- "$file"
+        test -z "$file_text" && run rm -- "$file"
     done
 fi
 
