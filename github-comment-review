@@ -28,12 +28,13 @@ hash gh jq mktemp cat
 unset body body_file
 
 method=POST
+quote=''
 args=()
 OPTIND=1
 while case "${!OPTIND---}" in
     -*?)false;;
     *)  args+=("${!OPTIND}"); ((++OPTIND)); continue
-esac || getopts h-f:u opt; do case "$opt" in
+esac || getopts h-f:uq opt; do case "$opt" in
     h|-)
         printf 'Usage: %q [Options] <comment_url>\n' "${0##*/}"
         echo 'Replies review comment'
@@ -42,11 +43,13 @@ esac || getopts h-f:u opt; do case "$opt" in
             'Options:' \
             '    -f <file>          comment body from file' \
             '    -u                 update a review or issue comment' \
+            '    -q                 use quoted old contents to init' \
             '    -h                 show help' \
             ; exit
         ;;
     f) body_file=$OPTARG;;
     u) method=PATCH;;
+    q) quote='> ';;
     :|\?)
         ((--OPTIND <= 0)) && OPTIND=1
         printf '%q: parse args failed, near by %q\n' "$0" "${!OPTIND}" >&2
@@ -63,7 +66,7 @@ if [ $# -ne 1 ]; then
     exit 2
 fi
 
-api=$(jq -Rrs --arg method "$method" <<< "$1" '
+info=$(jq -Rrs <<< "$1" '
 sub("\\s*$"; "") |
 capture("^\\s*
   (https?://)?github\\.com/
@@ -77,13 +80,12 @@ capture("^\\s*
 "x") // error("Invalid comment url: \(@sh)")
 | (if .kind | startswith("issue") then "issues" else "pulls" end) as $kind
 | "/repos/\(.owner)/\(.repo)/\($kind)/" as $pre
-| if $method == "PATCH" then
-    "comments/\(.id)"
-  else
-    "\(.number)/comments/\(.id)/replies"
-  end
-| $pre+.
+| $pre+("comments/\(.id)", "\(.number)/comments/\(.id)/replies")
 ') || exit
+IFS=$'\n' read -rd '' papi rapi <<< "$info" && exit 127
+
+[ $method = PATCH ] && api=$papi || api=$rapi
+
 echo "${api@A}" >&2
 
 tmp=$(mktemp review-replies.XXXXXXXXXX.md)
@@ -93,12 +95,17 @@ trap "echo Aborted, replies-file: ${tmp@Q}" exit
 if [ -v body_file ]; then
     cat -- "$body_file" > "$tmp"
 else
-    if [ $method = PATCH ]; then
+    if [ $method = PATCH ] || [ -n "$quote" ]; then
         gh api \
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            "$api" |
-            jq -r 'if .user then .body+"" | sub("\n+$"; "") else halt_error end' > "$tmp"
+            "$papi" |
+            jq -r --arg q "$quote" 'if .user then .body+"" | sub("\n+$"; "") else halt_error end
+                                    | if $q | length != 0 then
+                                        gsub("(?!$)(?<x>[^\r\n]*)\r?\n?";"> "+.x+"\n";"m")
+                                        | sub("\\s*\\z";"")+"\n\n"
+                                      end
+                                    ' > "$tmp"
     fi
     "${EDITOR:-/usr/bin/vim}" "$tmp"
 fi
