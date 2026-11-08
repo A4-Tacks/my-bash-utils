@@ -223,7 +223,9 @@ jq <<< "$payload"
 read -rp '--> Send review? [Y/n] ' REPLY
 case "$REPLY" in
     ''|[Yy]);;
-    *) accept; exit
+    *)  rmdir --ignore-fail-on-non-empty "$cache"
+        accept
+        exit
 esac
 
 PS3="--> Select review state: "
