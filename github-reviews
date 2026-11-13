@@ -24,8 +24,6 @@ function CATCH_ERROR { # {{{
 trap CATCH_ERROR ERR # }}}
 
 req_opts=(
-    --retry-all-errors
-    --retry 4
     --connect-timeout 15
     -H "Accept: application/vnd.github+json"
     -H "X-GitHub-Api-Version: 2022-11-28"
@@ -73,7 +71,7 @@ if [ $# -gt 1 ]; then
     exit 2
 fi
 
-hash gh curl jq
+hash gh curl jq mktemp
 shopt -s extglob
 
 if [[ ${1-} = ?(http?(s)://)?(www.)github.com/* ]]; then
@@ -84,6 +82,9 @@ repo=${repo##?(http?(s)://)?(www.)github.com/}
 repo=${repo:-$(gh repo set-default -v || exit)}
 id=${1:-$(gh pr view --json number | jq .number || exit)}
 id=${id##*/}
+
+tmp=$(mktemp --tmpdir reviews.XXXXXXXXXX)
+trap 'rm "$tmp"' exit
 
 function fail { # {{{
     echo "fail: ${*@Q}" >&2
@@ -99,8 +100,10 @@ api=(https://api.github.com/repos/$repo/{issues/$id/comments,pulls/$id{,/comment
 
 printf 'api: %s\n' "${api[@]@Q}"
 
-curl --no-progress-meter "${req_opts[@]}" -- "${api[@]}" |
-jq -nr --argjson recent $recent --argjson colors $colors \
+for _ in {1..5}; do
+    curl --no-progress-meter "${req_opts[@]}" -- "${api[@]}" > "$tmp" && break
+done
+jq -nr --argjson recent $recent --argjson colors $colors < "$tmp" \
 '
 {
   "+1":       "👍",
