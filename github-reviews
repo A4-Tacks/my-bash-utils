@@ -101,7 +101,7 @@ api=(https://api.github.com/repos/$repo/{issues/$id/comments,pulls/$id{,/comment
 printf 'api: %s\n' "${api[@]@Q}"
 
 for _ in {1..5}; do
-    curl --no-progress-meter "${req_opts[@]}" -- "${api[@]}" > "$tmp" && break
+    curl --fail-early --no-progress-meter "${req_opts[@]}" -- "${api[@]}" > "$tmp" && break
 done
 jq -nr --argjson recent $recent --argjson colors $colors < "$tmp" \
 '
